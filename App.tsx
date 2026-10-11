@@ -28,13 +28,14 @@ import {
 } from './src/components/Icons';
 import { IslamicGeometryBackground } from './src/components/IslamicGeometry';
 import {
+  ConfirmModal,
   CustomTargetModal,
   DhikrPickerModal,
-  ResetConfirmModal,
   SettingsModal,
 } from './src/components/Modals';
 import {
   counterReducer,
+  DhikrOption,
   getDhikr,
   initialCounterState,
   PRESET_TARGETS,
@@ -42,7 +43,7 @@ import {
 import { loadCounterState, saveCounterState } from './src/storage';
 import { colors } from './src/theme';
 
-type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | null;
+type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | 'resetAllConfirm' | null;
 
 function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
   if (!enabled) return;
@@ -61,6 +62,8 @@ function CounterScreen() {
   const [state, dispatch] = useReducer(counterReducer, initialCounterState);
   const [isLoaded, setIsLoaded] = useState(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
+  // Dhikr waiting for confirmation because switching would clear the current count.
+  const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
   useEffect(() => {
     loadCounterState().then((saved) => {
@@ -92,6 +95,15 @@ function CounterScreen() {
     if (canUndo) {
       dispatch({ type: 'undo' });
       playHaptic('tap', state.hapticsEnabled);
+    }
+  };
+
+  const handleSelectDhikr = (option: DhikrOption) => {
+    if (option.id === state.dhikrId) return;
+    if (state.count > 0) {
+      setPendingDhikr(option);
+    } else {
+      dispatch({ type: 'setDhikr', dhikrId: option.id });
     }
   };
 
@@ -134,8 +146,9 @@ function CounterScreen() {
 
               {/* Quick Haptics Toggle */}
               <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="تبديل الاهتزاز"
+                accessibilityRole="switch"
+                accessibilityLabel="الاهتزاز"
+                accessibilityState={{ checked: state.hapticsEnabled }}
                 hitSlop={8}
                 onPress={() => {
                   const nextHaptics = !state.hapticsEnabled;
@@ -170,241 +183,245 @@ function CounterScreen() {
           {/* Main Scroll Content */}
           <ScrollView
             bounces={false}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            {/* 1. Dhikr Showcase Card (Clickable to open library) */}
+            {/* In free-tap mode, taps on empty space count; buttons inside still handle their own taps. */}
             <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
-              onPress={() => setOpenModal('dhikrPicker')}
-              style={({ pressed }) => [styles.dhikrCard, pressed && styles.pressed]}
+              accessible={false}
+              disabled={!state.fullScreenTap}
+              onPress={handleIncrement}
+              style={styles.scrollContent}
             >
-              <View style={styles.dhikrCardTop}>
-                <View style={styles.dhikrCategoryBadge}>
-                  <Text style={styles.dhikrCategoryText}>{dhikr.category}</Text>
+              {/* 1. Dhikr Showcase Card (Clickable to open library) */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
+                onPress={() => setOpenModal('dhikrPicker')}
+                style={({ pressed }) => [styles.dhikrCard, pressed && styles.pressed]}
+              >
+                <View style={styles.dhikrCardTop}>
+                  <View style={styles.dhikrCategoryBadge}>
+                    <Text style={styles.dhikrCategoryText}>{dhikr.category}</Text>
+                  </View>
+                  <View style={styles.changeDhikrHint}>
+                    <Text style={styles.changeDhikrText}>تغيير الذكر</Text>
+                    <ChevronDownIcon size={14} color={colors.goldLight} />
+                  </View>
                 </View>
-                <View style={styles.changeDhikrHint}>
-                  <Text style={styles.changeDhikrText}>تغيير الذكر</Text>
-                  <ChevronDownIcon size={14} color={colors.goldLight} />
+
+                <Text style={[styles.dhikrPhraseText, dhikr.phrase.length > 80 && styles.dhikrPhraseLong]}>
+                  {dhikr.phrase}
+                </Text>
+
+                {dhikr.virtue ? (
+                  <View style={styles.virtueSnippet}>
+                    <SparkleIcon size={12} color={colors.goldLight} />
+                    <Text style={styles.virtueSnippetText} numberOfLines={1}>
+                      {dhikr.virtue}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+
+              {/* 2. Interactive Central Ring & Sacred Geometry */}
+              <View style={styles.ringSection}>
+                {/* Islamic Ambient Geometry in Background */}
+                <View pointerEvents="none" style={styles.geometryWrapper}>
+                  <IslamicGeometryBackground size={geometrySize} opacity={0.11} />
                 </View>
+
+                {/* Primary Interactive Ring */}
+                <CounterRing
+                  size={ringSize}
+                  count={state.count}
+                  target={state.target}
+                  title={dhikr.title}
+                  cycle={state.cycle}
+                  onPress={handleIncrement}
+                />
               </View>
 
-              <Text style={styles.dhikrPhraseText}>{dhikr.phrase}</Text>
-
-              {dhikr.virtue ? (
-                <View style={styles.virtueSnippet}>
-                  <SparkleIcon size={12} color={colors.goldLight} />
-                  <Text style={styles.virtueSnippetText} numberOfLines={1}>
-                    {dhikr.virtue}
-                  </Text>
+              {/* 3. Completion Banner (Shows when target is reached) */}
+              {isComplete ? (
+                <View style={styles.completionBanner}>
+                  <View style={styles.completionInfo}>
+                    <SparkleIcon size={18} color={colors.goldLight} />
+                    <Text style={styles.completionTitle}>مبارك! أتممت الورد بنجاح</Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="بدء الدورة التالية"
+                    onPress={handleNextCycle}
+                    style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.nextCycleText}>ابدأ الدورة التالية</Text>
+                    <NextCycleIcon size={16} color={colors.onGold} />
+                  </Pressable>
                 </View>
               ) : null}
-            </Pressable>
 
-            {/* 2. Interactive Central Ring & Sacred Geometry */}
-            <View style={styles.ringSection}>
-              {/* Islamic Ambient Geometry in Background */}
-              <View pointerEvents="none" style={styles.geometryWrapper}>
-                <IslamicGeometryBackground size={geometrySize} opacity={0.11} />
-              </View>
-
-              {/* Primary Interactive Ring */}
-              <CounterRing
-                size={ringSize}
-                count={state.count}
-                target={state.target}
-                title={dhikr.title}
-                cycle={state.cycle}
-                onPress={handleIncrement}
-              />
-            </View>
-
-            {/* 3. Completion Banner (Shows when target is reached) */}
-            {isComplete ? (
-              <View style={styles.completionBanner}>
-                <View style={styles.completionInfo}>
-                  <SparkleIcon size={18} color={colors.goldLight} />
-                  <Text style={styles.completionTitle}>مبارك! أتممت الورد بنجاح</Text>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="بدء الدورة التالية"
-                  onPress={handleNextCycle}
-                  style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
-                >
-                  <Text style={styles.nextCycleText}>ابدأ الدورة التالية</Text>
-                  <NextCycleIcon size={16} color={colors.onGold} />
-                </Pressable>
-              </View>
-            ) : null}
-
-            {/* 4. Target Selector Chips */}
-            <View
-              style={styles.targetSection}
-              accessibilityRole="radiogroup"
-              accessibilityLabel="الهدف"
-            >
-              <Text style={styles.targetHeaderLabel}>الهدف المطلوب:</Text>
-              <View style={styles.targetRow}>
-                {PRESET_TARGETS.map((target) => {
-                  const isSelected = state.target === target;
-                  return (
-                    <Pressable
-                      key={target}
-                      accessibilityRole="radio"
-                      accessibilityLabel={`الهدف ${toArabicDigits(target)}`}
-                      accessibilityState={{ checked: isSelected }}
-                      onPress={() => {
-                        dispatch({ type: 'setTarget', target });
-                        playHaptic('tap', state.hapticsEnabled);
-                      }}
-                      style={({ pressed }) => [
-                        styles.targetChip,
-                        isSelected && styles.targetChipSelected,
-                        pressed && styles.pressed,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.targetChipText,
-                          isSelected && styles.targetChipTextSelected,
+              {/* 4. Target Selector Chips */}
+              <View
+                style={styles.targetSection}
+                accessibilityRole="radiogroup"
+                accessibilityLabel="الهدف"
+              >
+                <Text style={styles.targetHeaderLabel}>الهدف المطلوب:</Text>
+                <View style={styles.targetRow}>
+                  {PRESET_TARGETS.map((target) => {
+                    const isSelected = state.target === target;
+                    return (
+                      <Pressable
+                        key={target}
+                        accessibilityRole="radio"
+                        accessibilityLabel={`الهدف ${toArabicDigits(target)}`}
+                        accessibilityState={{ checked: isSelected }}
+                        onPress={() => {
+                          dispatch({ type: 'setTarget', target });
+                          playHaptic('tap', state.hapticsEnabled);
+                        }}
+                        style={({ pressed }) => [
+                          styles.targetChip,
+                          isSelected && styles.targetChipSelected,
+                          pressed && styles.pressed,
                         ]}
                       >
-                        {toArabicDigits(target)}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+                        <Text
+                          style={[
+                            styles.targetChipText,
+                            isSelected && styles.targetChipTextSelected,
+                          ]}
+                        >
+                          {toArabicDigits(target)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
 
+                  <Pressable
+                    accessibilityRole="radio"
+                    accessibilityLabel={
+                      isPresetTarget
+                        ? 'هدف مخصص'
+                        : `هدف مخصص، الحالي ${toArabicDigits(state.target)}`
+                    }
+                    accessibilityState={{ checked: !isPresetTarget }}
+                    onPress={() => setOpenModal('customTarget')}
+                    style={({ pressed }) => [
+                      styles.targetChip,
+                      styles.customChip,
+                      !isPresetTarget && styles.targetChipSelected,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.targetChipText,
+                        !isPresetTarget && styles.targetChipTextSelected,
+                      ]}
+                    >
+                      {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص +'}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* 5. Floating Bottom Control Dock */}
+              <View style={styles.bottomDock}>
+                {/* Reset Button */}
                 <Pressable
-                  accessibilityRole="radio"
-                  accessibilityLabel={
-                    isPresetTarget
-                      ? 'هدف مخصص'
-                      : `هدف مخصص، الحالي ${toArabicDigits(state.target)}`
-                  }
-                  accessibilityState={{ checked: !isPresetTarget }}
-                  onPress={() => setOpenModal('customTarget')}
+                  accessibilityRole="button"
+                  accessibilityLabel="إعادة ضبط العداد"
+                  accessibilityState={{ disabled: !canUndo }}
+                  disabled={!canUndo}
+                  onPress={() => setOpenModal('resetConfirm')}
                   style={({ pressed }) => [
-                    styles.targetChip,
-                    styles.customChip,
-                    !isPresetTarget && styles.targetChipSelected,
+                    styles.dockButton,
+                    !canUndo && styles.disabled,
                     pressed && styles.pressed,
                   ]}
                 >
-                  <Text
+                  <View style={styles.dockIconCircle}>
+                    <ResetIcon size={18} color={canUndo ? colors.text : colors.textDim} />
+                  </View>
+                  <Text style={styles.dockLabel}>بدء جديد</Text>
+                </Pressable>
+
+                {/* FullScreen Tap Mode Toggle */}
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityLabel="النقر في كامل الشاشة"
+                  accessibilityState={{ checked: state.fullScreenTap }}
+                  onPress={() => {
+                    const nextVal = !state.fullScreenTap;
+                    dispatch({ type: 'setFullScreenTap', enabled: nextVal });
+                    playHaptic('tap', state.hapticsEnabled);
+                  }}
+                  style={({ pressed }) => [
+                    styles.dockButton,
+                    styles.dockButtonSpecial,
+                    state.fullScreenTap && styles.dockButtonActive,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <View
                     style={[
-                      styles.targetChipText,
-                      !isPresetTarget && styles.targetChipTextSelected,
+                      styles.dockIconCircle,
+                      state.fullScreenTap && styles.dockIconCircleActive,
                     ]}
                   >
-                    {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص +'}
+                    <FullScreenIcon
+                      size={19}
+                      color={state.fullScreenTap ? colors.goldLight : colors.text}
+                    />
+                  </View>
+                  <Text
+                    style={[
+                      styles.dockLabel,
+                      state.fullScreenTap && styles.dockLabelActive,
+                    ]}
+                  >
+                    {state.fullScreenTap ? 'نقر حر مفعل' : 'ملء الشاشة'}
                   </Text>
                 </Pressable>
+
+                {/* Dhikr Library Shortcut */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="مكتبة الأذكار"
+                  onPress={() => setOpenModal('dhikrPicker')}
+                  style={({ pressed }) => [styles.dockButton, pressed && styles.pressed]}
+                >
+                  <View style={styles.dockIconCircle}>
+                    <BookIcon size={18} color={colors.text} />
+                  </View>
+                  <Text style={styles.dockLabel}>الأذكار</Text>
+                </Pressable>
+
+                {/* Undo Button */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="تراجع عن العدة الأخيرة"
+                  accessibilityState={{ disabled: !canUndo }}
+                  disabled={!canUndo}
+                  onPress={handleUndo}
+                  style={({ pressed }) => [
+                    styles.dockButton,
+                    !canUndo && styles.disabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <View style={styles.dockIconCircle}>
+                    <UndoIcon size={18} color={canUndo ? colors.text : colors.textDim} />
+                  </View>
+                  <Text style={styles.dockLabel}>تراجع</Text>
+                </Pressable>
               </View>
-            </View>
 
-            {/* 5. Floating Bottom Control Dock */}
-            <View style={styles.bottomDock}>
-              {/* Reset Button */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="إعادة ضبط العداد"
-                accessibilityState={{ disabled: !canUndo }}
-                disabled={!canUndo}
-                onPress={() => setOpenModal('resetConfirm')}
-                style={({ pressed }) => [
-                  styles.dockButton,
-                  !canUndo && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View style={styles.dockIconCircle}>
-                  <ResetIcon size={18} color={canUndo ? colors.text : colors.textDim} />
-                </View>
-                <Text style={styles.dockLabel}>بدء جديد</Text>
-              </Pressable>
-
-              {/* FullScreen Tap Mode Toggle */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="وضع النقر الحر في الشاشة الكاملة"
-                onPress={() => {
-                  const nextVal = !state.fullScreenTap;
-                  dispatch({ type: 'setFullScreenTap', enabled: nextVal });
-                  playHaptic('tap', state.hapticsEnabled);
-                }}
-                style={({ pressed }) => [
-                  styles.dockButton,
-                  styles.dockButtonSpecial,
-                  state.fullScreenTap && styles.dockButtonActive,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.dockIconCircle,
-                    state.fullScreenTap && styles.dockIconCircleActive,
-                  ]}
-                >
-                  <FullScreenIcon
-                    size={19}
-                    color={state.fullScreenTap ? colors.goldLight : colors.text}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.dockLabel,
-                    state.fullScreenTap && styles.dockLabelActive,
-                  ]}
-                >
-                  {state.fullScreenTap ? 'نقر حر مفعل' : 'ملء الشاشة'}
-                </Text>
-              </Pressable>
-
-              {/* Dhikr Library Shortcut */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="مكتبة الأذكار"
-                onPress={() => setOpenModal('dhikrPicker')}
-                style={({ pressed }) => [styles.dockButton, pressed && styles.pressed]}
-              >
-                <View style={styles.dockIconCircle}>
-                  <BookIcon size={18} color={colors.text} />
-                </View>
-                <Text style={styles.dockLabel}>الأذكار</Text>
-              </Pressable>
-
-              {/* Undo Button */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="تراجع عن العدة الأخيرة"
-                accessibilityState={{ disabled: !canUndo }}
-                disabled={!canUndo}
-                onPress={handleUndo}
-                style={({ pressed }) => [
-                  styles.dockButton,
-                  !canUndo && styles.disabled,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View style={styles.dockIconCircle}>
-                  <UndoIcon size={18} color={canUndo ? colors.text : colors.textDim} />
-                </View>
-                <Text style={styles.dockLabel}>تراجع</Text>
-              </Pressable>
-            </View>
+              <Text style={styles.privacyNote}>بياناتك محفوظة على جهازك فقط</Text>
+            </Pressable>
           </ScrollView>
-
-          {/* Full Screen Tap Overlay (Active when fullScreenTap is enabled) */}
-          {state.fullScreenTap && (
-            <Pressable
-              style={styles.fullScreenTapResponder}
-              onPress={handleIncrement}
-              accessibilityLabel="المس للشروع في الذكر"
-            />
-          )}
         </View>
       )}
 
@@ -413,7 +430,7 @@ function CounterScreen() {
         visible={openModal === 'dhikrPicker'}
         selectedId={state.dhikrId}
         onClose={() => setOpenModal(null)}
-        onSelect={(option) => dispatch({ type: 'setDhikr', dhikrId: option.id })}
+        onSelect={handleSelectDhikr}
       />
 
       <CustomTargetModal
@@ -434,13 +451,37 @@ function CounterScreen() {
         onClose={() => setOpenModal(null)}
         onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
         onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
-        onResetStats={() => dispatch({ type: 'resetAll' })}
+        onResetStats={() => setOpenModal('resetAllConfirm')}
       />
 
-      <ResetConfirmModal
+      <ConfirmModal
         visible={openModal === 'resetConfirm'}
+        title="بدء دورة جديدة"
+        message="سيُعاد عداد الدورة الحالية إلى الصفر لتبدأ من جديد"
+        confirmLabel="نعم، ابدأ من جديد"
+        cancelLabel="متابعة الورد"
         onClose={() => setOpenModal(null)}
         onConfirm={() => dispatch({ type: 'reset' })}
+      />
+
+      <ConfirmModal
+        visible={openModal === 'resetAllConfirm'}
+        title="تصفير الإحصائيات"
+        message="سيُحذف العدد الحالي ومجموع التسبيحات الكلي نهائيًا من جهازك"
+        confirmLabel="نعم، صفّر الكل"
+        onClose={() => setOpenModal(null)}
+        onConfirm={() => dispatch({ type: 'resetAll' })}
+      />
+
+      <ConfirmModal
+        visible={pendingDhikr !== null}
+        title="تغيير الذكر"
+        message={`سيُصفَّر العدد الحالي (${toArabicDigits(state.count)}) ويبدأ ورد «${pendingDhikr?.title ?? ''}» من جديد`}
+        confirmLabel="نعم، غيّر الذكر"
+        onClose={() => setPendingDhikr(null)}
+        onConfirm={() => {
+          if (pendingDhikr) dispatch({ type: 'setDhikr', dhikrId: pendingDhikr.id });
+        }}
       />
     </LinearGradient>
   );
@@ -529,6 +570,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(223, 186, 107, 0.15)',
     borderColor: colors.goldBadgeBorder,
   },
+  scrollContainer: {
+    flexGrow: 1,
+  },
   scrollContent: {
     alignItems: 'center',
     flexGrow: 1,
@@ -585,6 +629,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 30,
     textAlign: 'center',
+  },
+  dhikrPhraseLong: {
+    fontSize: 15,
+    lineHeight: 25,
   },
   virtueSnippet: {
     alignItems: 'center',
@@ -737,10 +785,10 @@ const styles = StyleSheet.create({
     color: colors.goldText,
     fontWeight: '700',
   },
-  fullScreenTapResponder: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'transparent',
-    zIndex: 5,
+  privacyNote: {
+    color: colors.textFaint,
+    fontSize: 10.5,
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.72,

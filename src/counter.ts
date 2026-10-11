@@ -11,20 +11,22 @@ export type DhikrOption = {
   defaultTarget: number;
 };
 
+// Each virtue is a close paraphrase of a well-known hadith, with its source in parentheses.
+// Phrase and default target follow the wording and count in that hadith.
 export const DHIKR_OPTIONS: DhikrOption[] = [
   {
     id: 'tasbih_tahmid',
     title: 'التسبيح والتحميد',
-    phrase: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ، سُبْحَانَ اللَّهِ الْعَظِيمِ',
-    virtue: 'كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن',
+    phrase: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ',
+    virtue: 'كلمتان خفيفتان على اللسان، ثقيلتان في الميزان، حبيبتان إلى الرحمن (متفق عليه)',
     category: 'تسابيح',
     defaultTarget: 100,
   },
   {
     id: 'istighfar',
     title: 'الاستغفار',
-    phrase: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ',
-    virtue: 'من لزم الاستغفار جعل الله له من كل همٍّ فرجًا، ومن كل ضيقٍ مخرجًا',
+    phrase: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+    virtue: 'كان النبي ﷺ يستغفر الله ويتوب إليه في اليوم أكثر من سبعين مرة (رواه البخاري)',
     category: 'استغفار',
     defaultTarget: 100,
   },
@@ -32,39 +34,39 @@ export const DHIKR_OPTIONS: DhikrOption[] = [
     id: 'tasbih',
     title: 'التسبيح',
     phrase: 'سُبْحَانَ اللَّهِ',
-    virtue: 'تُغرس لقائلها نخلة في الجنة وتُحط بها الأوزار',
+    virtue: 'من سبّح مئة تسبيحة كُتبت له ألف حسنة أو حُطّت عنه ألف خطيئة (رواه مسلم)',
     category: 'تسابيح',
-    defaultTarget: 33,
+    defaultTarget: 100,
   },
   {
     id: 'tahmid',
     title: 'التحميد',
-    phrase: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
-    virtue: 'الحمد لله تملأ الميزان، وأفضل ما دعا به العبد ربه',
+    phrase: 'الْحَمْدُ لِلَّهِ',
+    virtue: 'والحمد لله تملأ الميزان (رواه مسلم)',
     category: 'تسابيح',
     defaultTarget: 33,
   },
   {
     id: 'takbir',
     title: 'التكبير',
-    phrase: 'اللَّهُ أَكْبَرُ كَبِيرًا',
-    virtue: 'من أحب الكلام إلى الله وأعظمه إجلالاً وتعظيمًا',
+    phrase: 'اللَّهُ أَكْبَرُ',
+    virtue: 'أحب الكلام إلى الله أربع: سبحان الله، والحمد لله، ولا إله إلا الله، والله أكبر (رواه مسلم)',
     category: 'تسابيح',
     defaultTarget: 33,
   },
   {
     id: 'tahlil',
     title: 'التهليل',
-    phrase: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',
-    virtue: 'أفضل ما قال النبيون، وحصن حصين من الشيطان',
+    phrase: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',
+    virtue: 'من قالها مئة مرة في يوم كانت له عدل عشر رقاب، وكانت له حرزًا من الشيطان يومه ذلك حتى يمسي (متفق عليه)',
     category: 'أذكار جامعة',
     defaultTarget: 100,
   },
   {
     id: 'hawqala',
     title: 'الحوقلة',
-    phrase: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ',
-    virtue: 'كنز من كنوز الجنة، وباب عظيم لدفع الهموم وجلب التيسير',
+    phrase: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
+    virtue: 'كنز من كنوز الجنة (متفق عليه)',
     category: 'أذكار جامعة',
     defaultTarget: 100,
   },
@@ -72,25 +74,26 @@ export const DHIKR_OPTIONS: DhikrOption[] = [
     id: 'salawat',
     title: 'الصلاة على النبي',
     phrase: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ',
-    virtue: 'من صلى عليّ صلاة واحدة صلى الله عليه بها عشرًا وكُفِي همه',
+    virtue: 'من صلى عليّ صلاة واحدة صلى الله عليه بها عشرًا (رواه مسلم)',
     category: 'صلاة على النبي',
     defaultTarget: 100,
   },
   {
     id: 'baqiyat',
     title: 'الباقيات الصالحات',
-    phrase: 'سُبْحَانَ اللَّهِ ، وَالْحَمْدُ لِلَّهِ ، وَلَا إِلَهَ إِلَّا اللَّهُ ، وَاللَّهُ أَكْبَرُ',
-    virtue: 'هن الباقيات الصالحات وخير ما طلعت عليه الشمس',
+    phrase: 'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ',
+    virtue: 'قال ﷺ: لأن أقولها أحبّ إليّ مما طلعت عليه الشمس (رواه مسلم)',
     category: 'تسابيح',
     defaultTarget: 33,
   },
   {
     id: 'sayyid_istighfar',
     title: 'سيد الاستغفار',
-    phrase: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ',
-    virtue: 'من قالها موقنًا بها فمات من يومه أو ليلته دخل الجنة',
+    phrase:
+      'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ',
+    virtue: 'من قالها من النهار موقنًا بها فمات من يومه قبل أن يمسي فهو من أهل الجنة (رواه البخاري)',
     category: 'استغفار',
-    defaultTarget: 33,
+    defaultTarget: 1,
   },
 ];
 
@@ -118,7 +121,7 @@ export type CounterAction =
 
 export const initialCounterState: CounterState = {
   count: 0,
-  target: 33,
+  target: DHIKR_OPTIONS[0].defaultTarget,
   dhikrId: DHIKR_OPTIONS[0].id,
   hapticsEnabled: true,
   cycle: 1,
@@ -178,6 +181,7 @@ export function counterReducer(state: CounterState, action: CounterAction): Coun
     }
     case 'setDhikr': {
       const selected = getDhikr(action.dhikrId);
+      if (selected.id === state.dhikrId) return state;
       return {
         ...state,
         dhikrId: selected.id,

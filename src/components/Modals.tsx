@@ -226,7 +226,7 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
 
   useEffect(() => {
     if (visible) {
-      setText(String(currentTarget));
+      setText(toArabicDigits(currentTarget));
       setError(null);
     }
   }, [visible, currentTarget]);
@@ -403,33 +403,40 @@ export function SettingsModal({
 }
 
 /* =========================================================================
-   4. RESET CONFIRMATION MODAL
+   4. CONFIRMATION MODAL (used for every destructive action)
    ========================================================================= */
 
-type ResetConfirmProps = {
+type ConfirmProps = {
   visible: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel?: string;
   onClose: () => void;
   onConfirm: () => void;
 };
 
-export function ResetConfirmModal({ visible, onClose, onConfirm }: ResetConfirmProps) {
+export function ConfirmModal({
+  visible,
+  title,
+  message,
+  confirmLabel,
+  cancelLabel = 'إلغاء',
+  onClose,
+  onConfirm,
+}: ConfirmProps) {
   return (
-    <ModalShell
-      visible={visible}
-      title="بدء دورة جديدة"
-      subtitle="سيُعاد عداد الدورة الحالية إلى الصفر لتبدأ من جديد"
-      onClose={onClose}
-    >
+    <ModalShell visible={visible} title={title} subtitle={message} onClose={onClose}>
       <View style={styles.actions}>
         <ActionButton
-          label="نعم، ابدأ من جديد"
+          label={confirmLabel}
           variant="danger"
           onPress={() => {
             onConfirm();
             onClose();
           }}
         />
-        <ActionButton label="متابعة الورد" variant="secondary" onPress={onClose} />
+        <ActionButton label={cancelLabel} variant="secondary" onPress={onClose} />
       </View>
     </ModalShell>
   );

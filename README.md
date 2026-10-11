@@ -2,17 +2,23 @@
 
   <img src="./assets/icon.png" alt="Zekr Logo" width="120" height="120" style="border-radius: 28px;" />
 
-  # ذِكر — Zekr
+  # Zekr — ذِكر
 
-  ### مسبحة إلكترونية هادئة ورفيق للذكر والسكينة
-  **A Serene, Privacy-First Islamic Tasbeeh & Dhikr Mobile Companion**
+  ### A Serene, Privacy-First Islamic Tasbeeh & Dhikr Mobile Companion
+  **مسبحة إلكترونية هادئة ورفيق يومي للذكر والسكينة**
 
   <p align="center">
-    <a href="#-key-features">المميزات</a> •
-    <a href="#-tech-stack">التقنيات</a> •
-    <a href="#-getting-started">التشغيل والتثبيت</a> •
-    <a href="#-architecture">الهيكلية</a> •
-    <a href="#-privacy--ethics">الخصوصية</a>
+    <b>English</b> • <a href="./README.ar.md">العربية (Arabic)</a>
+  </p>
+
+  <p align="center">
+    <a href="#-about-zekr">About</a> •
+    <a href="#-key-features">Key Features</a> •
+    <a href="#-dhikr-library--meanings">Dhikr Library & Meanings</a> •
+    <a href="#-tech-stack">Tech Stack</a> •
+    <a href="#-getting-started">Getting Started</a> •
+    <a href="#-architecture">Architecture</a> •
+    <a href="#-privacy--ethics">Privacy</a>
   </p>
 
   [![Expo SDK](https://img.shields.io/badge/Expo-SDK%2057-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
@@ -26,149 +32,176 @@
 
 ---
 
-## 📖 About Zekr | عن التطبيق
-
-**ذِكر (Zekr)** هو تطبيق إسلامي مفتوح المصدر مصمم بعناية فائقة ليكون رفيقك اليومي في الذكر والتسبيح. يجمع التطبيق بين **جماليات الفن الإسلامي والهندسة المقدسة**، وتجربة المستخدم الحديثة ذات الملمس الفيزيائي التفاعلي، مع الالتزام التام بالخصوصية وعدم الاتصال بالإنترنت.
-
-> *«أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ»* — سورة الرعد (٢٨)
+> 🌍 **Language Selection:**
+> - [**English**](./README.md) (Current)
+> - [**العربية (Arabic)**](./README.ar.md)
 
 ---
 
-## ✨ Key Features | أبرز المزايا
+## 📖 About Zekr
 
-### 📿 حلقة تسبيح تفاعلية مع ٣٣ حبة ضوئية
-- **33 Luminous Prayer Beads**: حلقة دائرية مستوحاة من المسبحة الحقيقية؛ تُضيء الحبات تباعًا بلون الذهب الملكي مع كل تسبيحة.
-- **Micro-Animations & Tactile Physics**: ارتداد فيزيائي نابض عند كل ضغطة (`Animated.spring`) مع موجة ضوئية متلاشية وقفزة في العداد.
-- **احتفال بإتمام الورد**: نبض ضوئي هادئ وتنبيه اهتزازي لطيف عند بلوغ الهدف المطلوب مع إمكانية بدء الدورة التالية مباشرة.
+**Zekr (ذِكر)** is an open-source, mobile application crafted with love to provide a peaceful and focused remembrance (*Dhikr*) and tasbeeh experience. 
 
-### 🌟 خلفية هندسية إسلامية (خاتم سليمان الزخرفي)
-- نجمة إسلامية ثمانية الأضلاع (*Islamic 8-Point Star*) مصممة بمتجهات SVG مع إشعاع هادئ باللون الزمردي والذهبي، تمنح التطبيق هيبة وسكينة وروحانية.
+Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, Zekr blends **timeless Islamic sacred geometry** with modern, tactile mobile physics. It offers a distraction-free spiritual companion that is completely offline, privacy-first, and free of commercial ads forever.
 
-### 📚 مكتبة أذكار مأثورة بالتشكيل الكامل
-- نصوص قرآنية ونبوية مشكولة بالكامل بدقة متناهية.
-- مقسمة إلى تصنيفات: *(تسابيح، أذكار جامعة، استغفار، صلاة على النبي)*.
-- توثيق فضل كل ذكر وأجره المأثور من الأحاديث الصحيحة مع الهدف المقترح.
-
-### 🔁 نظام الختمات والدورات وإحصائيات التسبيح
-- تتبع رقم الدورة الحالية (*الدورة الأولى، الثانية، الثالثة...*).
-- عدّاد إجمالي تراكمي يحفظ كل تسبيحة قمت بها على الجهاز.
-- تنسيق الأرقام بالمنازل والفاصلة العربية الأصيلة (*١،٢٥٠*).
-
-### 📱 وضع النقر في كامل الشاشة (Free Tap Mode)
-- إمكانية تفعيل وضع النقر الحر للمس أي مكان على الشاشة لزيادة العدّ دون الحاجة للنظر إلى الهاتف، مثالي للمشي والخلوات.
-
-### 📳 اهتزاز لمسي مخصص (Haptics Feedback)
-- استجابة حسية متقنة عبر محرك الاهتزاز (`expo-haptics`) تميز بين النقرة العادية ولحظة إتمام الهدف.
-
-### 🔒 خصوصية تامة وبدون إنترنت بنسبة ١٠٠٪
-- خالي تمامًا من أي إعلانات أو تتبع أو تحليلات.
-- لا يتطلب أي صلاحيات إنترنت أو وسائط.
-- يُحفظ تقدمك محليًا بالكامل داخل جهازك عبر `AsyncStorage`.
+> *"Verily, in the remembrance of Allah do hearts find rest."* — Surah Ar-Ra'd (13:28)
 
 ---
 
-## 🛠️ Tech Stack | التقنيات المستخدمة
+## ✨ Key Features
 
-| التقنية / المكتبة | الإصدار | الاستخدام |
+### 📿 1. Interactive 33-Bead Luminous Tasbeeh Ring
+- **Physical Prayer Bead Ring**: An outer track of 33 luminous beads inspired by traditional misbaha prayer beads. Each bead illuminates in imperial gold as your count progresses.
+- **Micro-Animations & Physics**: Fluid spring recoil (`Animated.spring`) on touch, radiating light-wave ripples, and bouncy number pop on every increment.
+- **Target Completion Flourish**: Soft rhythmic pulse animation and subtle success haptic vibration upon completing your goal.
+
+### 🌟 2. Sacred Islamic Geometric Backdrop
+- An SVG vector background featuring the **8-Pointed Islamic Star** (*Khatam Suleiman*) and arabesque framing with gentle celestial emerald and champagne gold ambient glow.
+
+### 📚 3. Authentic Dhikr Library with Full Vowel Marks (Tashkeel)
+- Fully diacritized Arabic phrases accompanied by their authentic Hadith references (*Sahih al-Bukhari*, *Sahih Muslim*, *Muttafaqun 'Alayh*).
+- Clear English transliterations and translations to empower non-native Arabic speakers.
+- Grouped into meaningful categories (*Taspbih*, *Comprehensive Remembrance*, *Istighfar*, *Salawat*).
+
+### 🔁 4. Cycle Tracking & Lifetime Session Stats
+- Displays current cycle progression (*Round 1, Round 2, Round 3...*).
+- All-time session tally formatted with authentic Arabic numerals (`١،٢٥٠`).
+- Allows seamless one-tap transition to start the next cycle when you finish a round.
+
+### 📱 5. Full-Screen Tap Mode (Eyes-Free Tasbeeh)
+- Toggle full-screen mode to tap anywhere on your display without having to aim for the center circle. Ideal for walking, night reflection, or quiet remembrance.
+
+### 📳 6. Customizable Haptic Touch Feedback
+- Fine-tuned vibrational pulses powered by `expo-haptics` that differentiate between individual bead counts and goal completion.
+
+### 🔒 7. 100% Offline & Absolute Privacy
+- **Zero Ads, Zero Trackers**: No analytics SDKs, no third-party network calls.
+- **Zero Permissions**: Requires neither internet access nor media/storage permissions.
+- **Local Persistence**: State and preferences are saved locally on your device via `AsyncStorage`.
+
+---
+
+## 📖 Dhikr Library & Meanings
+
+For non-native Arabic speakers, here is a guide to the authentic remembrances included in Zekr:
+
+| Remembrance & Transliteration | Arabic Text | Meaning / Translation | Prescribed Count & Hadith Source |
+| :--- | :--- | :--- | :--- |
+| **Tasbeeh & Tahmeed**<br>*Subhan Allahi wa bihamdihi, Subhan Allahil-'Azeem* | سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ | *"Glory be to Allah and praise Him; Glory be to Allah the Magnificent."* | **100×**<br>Two phrases light on the tongue, heavy on the balance, beloved to the Most Merciful (*Agreed Upon / Bukhari & Muslim*) |
+| **Istighfar (Seeking Forgiveness)**<br>*Astaghfirullaha wa atoobu ilayh* | أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ | *"I seek the forgiveness of Allah and turn to Him in repentance."* | **100×**<br>The Prophet ﷺ sought forgiveness over 70/100 times daily (*Sahih al-Bukhari*) |
+| **At-Tasbeeh**<br>*Subhan Allah* | سُبْحَانَ اللَّهِ | *"Glory be to Allah (above all imperfection)."* | **100× / 33×**<br>Whoever says it 100 times receives 1,000 good deeds or has 1,000 sins expiated (*Sahih Muslim*) |
+| **At-Tahmeed**<br>*Al-Hamdulillah* | الْحَمْدُ لِلَّهِ | *"All praise and gratitude belong to Allah alone."* | **33×**<br>"Alhamdulillah fills the scale of good deeds" (*Sahih Muslim*) |
+| **At-Takbeer**<br>*Allahu Akbar* | اللَّهُ أَكْبَرُ | *"Allah is the Greatest."* | **33×**<br>Among the four most beloved words to Allah (*Sahih Muslim*) |
+| **At-Tahlil (Declaration of Oneness)**<br>*La ilaha illallahu wahdahu la shareeka lah...* | لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ | *"There is no deity worthy of worship except Allah alone, without partner; to Him belongs all sovereignty and praise..."* | **100×**<br>Equivalent to freeing 10 captives, 100 good deeds written, 100 sins erased, and protection from Satan (*Agreed Upon*) |
+| **Al-Hawqala**<br>*La hawla wa la quwwata illa billah* | لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ | *"There is no power nor might except with Allah."* | **100×**<br>A treasure from the treasures of Paradise (*Agreed Upon*) |
+| **As-Salawat (Blessings upon the Prophet)**<br>*Allahumma salli wa sallim 'ala Nabiyyina Muhammad* | اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ | *"O Allah, send peace and blessings upon our Prophet Muhammad."* | **100×**<br>Whoever sends one blessing upon him, Allah sends ten blessings upon them (*Sahih Muslim*) |
+| **Al-Baqiyat As-Salihat**<br>*Subhan Allah, wal-Hamdulillah, wa la ilaha illallah, wallahu Akbar* | سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ | *"Glory be to Allah, praise be to Allah, there is no deity but Allah, and Allah is Greatest."* | **33×**<br>"Beloved to me more than all upon which the sun rises" (*Sahih Muslim*) |
+| **Sayyid al-Istighfar (Chief of Forgiveness)**<br>*Allahumma Anta Rabbi la ilaha illa Anta...* | اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ... | *"O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant..."* | **1× (Morning & Evening)**<br>Whoever recites it with conviction and passes away that day enters Paradise (*Sahih al-Bukhari*) |
+
+---
+
+## 🛠️ Tech Stack
+
+| Technology / Package | Version | Purpose |
 | :--- | :--- | :--- |
-| **Expo SDK** | `~57.0` | إطار عمل التطوير المحمول السريع والآمن |
-| **React Native** | `0.86.3` | بناء الواجهات المحمولة الأصلية |
-| **React** | `19.2.3` | المحرك الأساسي لإدارة المكونات |
-| **TypeScript** | `~6.0` | كتابة كود صارم وموثوق بدون أخطاء نوعية |
-| **React Native SVG** | `15.15.4` | رسم الزخارف الهندسية وحلقات التسبيح والأيقونات |
-| **Expo Linear Gradient** | `~57.0` | تدريجات الألوان الزمردية الملكية |
-| **Expo Haptics** | `~57.0` | ردود الفعل اللمسية والاهتزازات الدقيقة |
-| **AsyncStorage** | `2.2.0` | التخزين المحلي الآمن لبيانات العداد والأذكار |
+| **Expo SDK** | `~57.0` | Cross-platform runtime and build toolchain |
+| **React Native** | `0.86.3` | Native UI components and rendering |
+| **React** | `19.2.3` | Core UI state management |
+| **TypeScript** | `~6.0` | Strict type safety and compilation |
+| **React Native SVG** | `15.15.4` | Sacred geometric art, 33-bead tasbeeh track, and icons |
+| **Expo Linear Gradient** | `~57.0` | Rich celestial emerald and gold gradients |
+| **Expo Haptics** | `~57.0` | Tactile sensory feedback engine |
+| **AsyncStorage** | `2.2.0` | Encrypted/local offline persistence |
 
 ---
 
-## 🚀 Getting Started | التثبيت والتشغيل محليًا
+## 🚀 Getting Started
 
-### المتطلبات الأساسية
-- تثبيت **Node.js** (إصدار 18 أو أحدث)
-- تطبيق **Expo Go** على هاتفك المحمول ([iOS App Store](https://apps.apple.com/app/expo-go/id982107779) / [Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent))، أو محاكي Simulator/Emulator.
+### Prerequisites
+- [Node.js](https://nodejs.org/) (v18 or newer recommended)
+- **Expo Go** app on your physical mobile device ([iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)), or an iOS Simulator / Android Emulator.
 
-### خطوات التشغيل
+### Installation & Launch
 
-1. **استنساخ المستودع (Clone the Repository):**
+1. **Clone the repository:**
    ```bash
    git clone https://github.com/amu3dev/Zekr.git
    cd Zekr
    ```
 
-2. **تثبيت الحزم والاعتماديات (Install Dependencies):**
+2. **Install project dependencies:**
    ```bash
    npm install
    ```
 
-3. **تشغيل خادم التطوير (Start Dev Server):**
+3. **Start the Expo Metro dev server:**
    ```bash
    npx expo start
    ```
 
-4. **المعاينة على جهازك:**
-   - امسح رمز الـ **QR Code** الظاهر في الطرفية عبر كاميرا الهاتف أو تطبيق Expo Go.
-   - أو اضغط على حرف `i` لتشغيل محاكي iOS، أو حرف `a` لتشغيل محاكي Android.
+4. **Preview on your device:**
+   - Scan the **QR Code** in your terminal using the Expo Go app (Android) or the camera app (iOS).
+   - Or press `i` to launch the **iOS Simulator**, or `a` to launch the **Android Emulator**.
 
-### الفحص والتحقق من الجودة
+### Quality Checks
 ```bash
-# التحقق من خلو الأنواع من الأخطاء
+# Run TypeScript strict type verification
 npx tsc --noEmit
 
-# تشخيص سلامة بيئة إكسبو والاعتماديات
+# Run Expo project configuration and health diagnostics
 npx expo-doctor
 ```
 
 ---
 
-## 📂 Project Architecture | هيكلية المشروع
+## 📂 Project Architecture
 
 ```
 Zekr/
-├── assets/                       # أيقونات التطبيق وصور البداية (Splash & Icons)
+├── assets/                       # App icons, splash screens, and adaptive assets
 ├── src/
 │   ├── components/
-│   │   ├── CounterRing.tsx       # حلقة التسبيح التفاعلية وحبات المسبحة والأنيميشن
-│   │   ├── IslamicGeometry.tsx   # الزخرفة الهندسية الإسلامية وشعاع النور
-│   │   ├── Icons.tsx             # منظومة الأيقونات المتجهية SVG
-│   │   └── Modals.tsx            # مكتبة الأذكار، تحديد الهدف، والإعدادات
-│   ├── arabic.ts                 # معالجة الأرقام العربية والترتيب اللفظي للدورات
-│   ├── counter.ts                # منطق العداد، مكتبة الأذكار، وإدارة الحالة (Reducer)
-│   ├── storage.ts                # حفظ واسترجاع الحالة محليًا عبر AsyncStorage
-│   └── theme.ts                  # منظومة الألوان والرموز الزجاجية والزمردية
-├── App.tsx                       # الشاشة الرئيسية وتكامل الواجهة والتحكم
-├── app.json                      # إعدادات تطبيق إكسبو والصلاحيات
-├── index.ts                      # نقطة الدخول الرئيسية للتطبيق
-├── package.json                  # الاعتماديات وأوامر التشغيل
-└── tsconfig.json                 # ضبط مترجم TypeScript
+│   │   ├── CounterRing.tsx       # Interactive 33-bead tasbeeh ring & spring animations
+│   │   ├── IslamicGeometry.tsx   # 8-point sacred star vector motif & ambient glows
+│   │   ├── Icons.tsx             # Clean SVG vector icon collection
+│   │   └── Modals.tsx            # Dhikr library sheet, target presets, & settings
+│   ├── arabic.ts                 # Arabic number formatting, ordinals, and normalization
+│   ├── counter.ts                # Dhikr database, hadith virtues, reducer & persistence sanitize
+│   ├── storage.ts                # Local storage interface via AsyncStorage
+│   └── theme.ts                  # Design tokens, celestial emerald & royal gold palette
+├── App.tsx                       # Main application screen and dock orchestration
+├── app.json                      # Expo application manifest & permission lockdown
+├── index.ts                      # Application root entry point
+├── package.json                  # Dependencies and scripts
+└── tsconfig.json                 # TypeScript compiler options
 ```
 
 ---
 
-## 🔒 Privacy & Ethics Manifesto | الخصوصية والميثاق الأخلاقي
+## 🔒 Privacy & Ethics Manifesto
 
-- **صدقة جارية (Sadaqah Jariyah)**: هذا المشروع غير ربحي ومفتوح المصدر وخالٍ للأبد من أي إعلانات تجارية مزعجة تشتت روحانية الذكر.
-- **انعدام الصلاحيات الحساسة (Zero Permission Footprint)**: لا يطلب التطبيق ولا يحتاج أي صلاحيات للوصول إلى الموقع، الكاميرا، الميكروفون، أو جهات الاتصال.
-- **بياناتك لك وحدك**: لا توجد خوادم خارجية، ولا يتم إرسال أي معلومة أو إحصائية خارج جهازك مطلقًا.
-
----
-
-## 🤝 Contributing | المساهمة في المشروع
-
-نرحب بمساهمات المطورين لتحسين الأداء أو إضافة أذكار مأثورة وصحيحة:
-
-1. قم بعمل **Fork** للمستودع.
-2. أنشئ فرعًا جديدًا لميزتك (`git checkout -b feature/amazing-feature`).
-3. تأكد من اجتياز الفحص البرمجي: `npx tsc --noEmit`.
-4. ارفع التغييرات (`git commit -m 'feat: Add new dhikr collection'`).
-5. ادفع الفرع وافتح طلب سحب (**Pull Request**).
+- **Sadaqah Jariyah (Ongoing Charity)**: This project is strictly non-profit and open-source. It will never feature advertisements, subscriptions, or paywalls.
+- **Zero Permission Footprint**: Zekr declares and enforces zero access permissions. It does not ask for location, contacts, microphone, camera, or internet access.
+- **Your Data Remains Yours**: Your praises and counts are stored locally on your device. Nothing leaves your phone.
 
 ---
 
-## 📄 License | الترخيص
+## 🤝 Contributing
 
-هذا المشروع مرخص تحت رخصة **MIT License** — طالع ملف [LICENSE](./LICENSE) للتفاصيل.
+Contributions to improve performance, add authentic adhkar, or refine accessibility are welcome!
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-feature`).
+3. Ensure type safety: `npx tsc --noEmit` and `npx expo-doctor`.
+4. Commit your changes (`git commit -m 'feat: Add new authentic dhikr'`).
+5. Push to your branch and open a Pull Request.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for details.
 
 <div align="center">
-  <sub>صُنع بإحسان ليكون عونًا على ذكر الله في كل وقت وحين 🌿</sub>
+  <sub>Crafted with devotion to be a peaceful companion for the remembrance of Allah 🌿</sub>
 </div>
