@@ -1,18 +1,28 @@
-import { useEffect, useState } from 'react';
-import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { getCycleText, toArabicDigits } from '../arabic';
-import { colors } from '../theme';
+import { useTheme } from '../theme';
+import type { ThemeTokens } from '../theme';
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const VIEWBOX = 360;
 const CENTER = VIEWBOX / 2;
-const RADIUS = 114;
+const RADIUS = 113;
 const STROKE = 8;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-const BEAD_RADIUS = 138;
-const TOTAL_BEADS = 33;
-const BEAD_SIZE = 7.5; // Radius of each spherical bead
+const BEAD_RADIUS = 139;
+const TOTAL_BEADS = 36;
+const BEAD_SIZE = 7.2;
 
 type Props = {
   size: number;
@@ -24,241 +34,255 @@ type Props = {
   onPress: () => void;
 };
 
+function useReducedMotion() {
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (active) setReduceMotion(enabled);
+    });
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
+
+  return reduceMotion;
+}
+
 export function CounterRing({ size, count, target, title, cycle, disabled, onPress }: Props) {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const reduceMotion = useReducedMotion();
   const isComplete = count >= target;
   const progress = Math.min(count / target, 1);
-  const angle = progress * 2 * Math.PI;
-  const headX = CENTER + RADIUS * Math.sin(angle);
-  const headY = CENTER - RADIUS * Math.cos(angle);
-
-  // Stable Animated Values
   const [pressScale] = useState(() => new Animated.Value(1));
   const [countPop] = useState(() => new Animated.Value(1));
   const [rippleAnim] = useState(() => new Animated.Value(0));
   const [completePulse] = useState(() => new Animated.Value(1));
+  const [progressAnim] = useState(() => new Animated.Value(progress));
 
-  // Pulse when target is reached
   useEffect(() => {
-    if (!isComplete) {
+    if (reduceMotion) {
+      progressAnim.setValue(progress);
+      return;
+    }
+
+    const animation = Animated.timing(progressAnim, {
+      duration: 240,
+      toValue: progress,
+      useNativeDriver: false,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [progress, progressAnim, reduceMotion]);
+
+  useEffect(() => {
+    if (!isComplete || reduceMotion) {
+      completePulse.stopAnimation();
       completePulse.setValue(1);
       return;
     }
 
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(completePulse, { toValue: 1.04, duration: 900, useNativeDriver: true }),
-        Animated.timing(completePulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(completePulse, { toValue: 1.025, duration: 1000, useNativeDriver: true }),
+        Animated.timing(completePulse, { toValue: 1, duration: 1000, useNativeDriver: true }),
       ]),
     );
 
     animation.start();
-
     return () => {
       animation.stop();
       completePulse.setValue(1);
     };
-  }, [isComplete, completePulse]);
+  }, [completePulse, isComplete, reduceMotion]);
 
-  const handlePressIn = () => {
+  const runPressAnimation = () => {
+    if (reduceMotion) return;
     Animated.spring(pressScale, {
-      toValue: 0.94,
+      toValue: 0.95,
       useNativeDriver: true,
       speed: 40,
-      bounciness: 4,
+      bounciness: 3,
     }).start();
   };
 
-  const handlePressOut = () => {
+  const runReleaseAnimation = () => {
+    if (reduceMotion) return;
     Animated.spring(pressScale, {
       toValue: 1,
       useNativeDriver: true,
-      friction: 4,
-      tension: 120,
+      friction: 5,
+      tension: 130,
     }).start();
   };
 
   const handlePress = () => {
-    // Pop count animation
-    countPop.setValue(1.16);
-    Animated.spring(countPop, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 5,
-      tension: 160,
-    }).start();
+    if (!reduceMotion) {
+      countPop.setValue(1.08);
+      Animated.spring(countPop, {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 6,
+        tension: 150,
+      }).start();
 
-    // Trigger ripple
-    rippleAnim.setValue(0);
-    Animated.timing(rippleAnim, {
-      toValue: 1,
-      duration: 450,
-      useNativeDriver: true,
-    }).start();
+      rippleAnim.setValue(0);
+      Animated.timing(rippleAnim, {
+        toValue: 1,
+        duration: 380,
+        useNativeDriver: true,
+      }).start();
+    }
 
     onPress();
   };
 
-  // Generate 33 spherical bead coordinates around the perimeter.
-  // Beads illuminate 1-by-1 with each tap in a 33-count loop like a physical misbaha.
-  const activeBeadsInLoop = count === 0 ? 0 : ((count - 1) % TOTAL_BEADS) + 1;
-  const beads = [];
-  for (let i = 0; i < TOTAL_BEADS; i++) {
-    const beadAngle = (i / TOTAL_BEADS) * 2 * Math.PI - Math.PI / 2;
-    const bx = CENTER + BEAD_RADIUS * Math.cos(beadAngle);
-    const by = CENTER + BEAD_RADIUS * Math.sin(beadAngle);
-    const isBeadActive = count > 0 && i < activeBeadsInLoop;
-    beads.push({ id: i, bx, by, isBeadActive });
-  }
+  // The beads are a compact, scalable view of the selected goal. The exact
+  // count remains in the animated arc and center label, while the 36 beads
+  // stay legible for both 33 and 1000-count goals.
+  const activeBeads = count === 0 ? 0 : Math.min(TOTAL_BEADS, Math.ceil(progress * TOTAL_BEADS));
+  const beads = Array.from({ length: TOTAL_BEADS }, (_, id) => {
+    const beadAngle = (id / TOTAL_BEADS) * 2 * Math.PI - Math.PI / 2;
+    return {
+      id,
+      bx: CENTER + BEAD_RADIUS * Math.cos(beadAngle),
+      by: CENTER + BEAD_RADIUS * Math.sin(beadAngle),
+      isActive: id < activeBeads,
+    };
+  });
 
   const digits = String(count).length;
-  const countFontSize = size * (digits <= 2 ? 0.23 : digits === 3 ? 0.20 : 0.16);
+  const countFontSize = size * (digits <= 2 ? 0.23 : digits === 3 ? 0.19 : 0.15);
+  const progressDashOffset = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [CIRCUMFERENCE, 0],
+  });
+  const angle = progress * 2 * Math.PI;
+  const headX = CENTER + RADIUS * Math.sin(angle);
+  const headY = CENTER - RADIUS * Math.cos(angle);
 
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}>
         <Defs>
-          {/* 3D Jade Bead Spherical Gradient (Inactive) */}
-          <RadialGradient id="jadeBeadSphere" cx="35%" cy="35%" r="65%">
-            <Stop offset="0%" stopColor={colors.beadJadeHighlight} />
-            <Stop offset="55%" stopColor={colors.beadJadeBase} />
-            <Stop offset="100%" stopColor={colors.beadJadeShadow} />
+          <RadialGradient id="inactiveBeadSphere" cx="32%" cy="30%" r="68%">
+            <Stop offset="0%" stopColor={theme.beadInactiveHighlight} />
+            <Stop offset="55%" stopColor={theme.beadInactiveBase} />
+            <Stop offset="100%" stopColor={theme.beadInactiveShadow} />
           </RadialGradient>
-
-          {/* 3D Gold Pearl Spherical Gradient (Active) */}
-          <RadialGradient id="goldBeadSphere" cx="32%" cy="32%" r="68%">
-            <Stop offset="0%" stopColor={colors.beadGoldHighlight} />
-            <Stop offset="45%" stopColor={colors.beadGoldBase} />
-            <Stop offset="85%" stopColor={colors.beadGoldDeep} />
-            <Stop offset="100%" stopColor={colors.beadGoldShadow} />
+          <RadialGradient id="activeBeadSphere" cx="30%" cy="28%" r="70%">
+            <Stop offset="0%" stopColor={theme.beadActiveHighlight} />
+            <Stop offset="46%" stopColor={theme.beadActiveBase} />
+            <Stop offset="84%" stopColor={theme.beadActiveDeep} />
+            <Stop offset="100%" stopColor={theme.beadActiveShadow} />
           </RadialGradient>
-
-          {/* Golden Progress Stroke Gradient */}
-          <LinearGradient id="goldStrokeGrad" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0%" stopColor={colors.goldBright} />
-            <Stop offset="50%" stopColor={colors.gold} />
-            <Stop offset="100%" stopColor={colors.goldDeep} />
+          <LinearGradient id="progressStroke" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0%" stopColor={theme.warmBright} />
+            <Stop offset="54%" stopColor={theme.warm} />
+            <Stop offset="100%" stopColor={theme.warmDeep} />
           </LinearGradient>
-
-          {/* Inner Disc Ambient Gradient */}
-          <RadialGradient id="innerDiscShade" cx="50%" cy="50%" rx="50%" ry="50%">
-            <Stop offset="0%" stopColor="#0F281E" />
-            <Stop offset="75%" stopColor="#081812" />
-            <Stop offset="100%" stopColor="#040C08" />
+          <RadialGradient id="ringDiscShade" cx="50%" cy="44%" rx="58%" ry="58%">
+            <Stop offset="0%" stopColor={theme.surfaceElevated} />
+            <Stop offset="76%" stopColor={theme.ringInner} />
+            <Stop offset="100%" stopColor={theme.ringOuter} />
           </RadialGradient>
         </Defs>
 
-        {/* Outer Circular String Thread linking the beads */}
         <Circle
           cx={CENTER}
           cy={CENTER}
           r={BEAD_RADIUS}
           fill="none"
-          stroke={colors.beadString}
-          strokeWidth={1.5}
+          stroke={theme.beadString}
+          strokeWidth={1.4}
         />
 
-        {/* Inner Disc Bevel */}
         <Circle
           cx={CENTER}
           cy={CENTER}
-          r={RADIUS + 6}
-          fill="url(#innerDiscShade)"
-          stroke="rgba(224, 194, 128, 0.22)"
+          r={RADIUS + 7}
+          fill="url(#ringDiscShade)"
+          stroke={theme.surfaceBorder}
           strokeWidth={1.2}
         />
 
-        {/* Track Base */}
         <Circle
           cx={CENTER}
           cy={CENTER}
           r={RADIUS}
           fill="none"
-          stroke={colors.track}
+          stroke={theme.track}
           strokeWidth={STROKE}
         />
 
-        {/* Luminous Active Progress Arc */}
-        {progress > 0 && (
-          <>
-            {/* Soft Glow Under-stroke */}
-            <Circle
-              cx={CENTER}
-              cy={CENTER}
-              r={RADIUS}
-              fill="none"
-              stroke={colors.trackGlow}
-              strokeWidth={STROKE + 6}
-              strokeLinecap="round"
-              strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-              strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
-              transform={`rotate(-90 ${CENTER} ${CENTER})`}
-            />
+        <AnimatedCircle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          fill="none"
+          stroke={theme.trackGlow}
+          strokeWidth={STROKE + 6}
+          strokeLinecap="round"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={progressDashOffset}
+          transform={`rotate(-90 ${CENTER} ${CENTER})`}
+        />
+        <AnimatedCircle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          fill="none"
+          stroke="url(#progressStroke)"
+          strokeWidth={STROKE}
+          strokeLinecap="round"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={progressDashOffset}
+          transform={`rotate(-90 ${CENTER} ${CENTER})`}
+        />
 
-            {/* Main Crisp Gold Stroke */}
-            <Circle
-              cx={CENTER}
-              cy={CENTER}
-              r={RADIUS}
-              fill="none"
-              stroke="url(#goldStrokeGrad)"
-              strokeWidth={STROKE}
-              strokeLinecap="round"
-              strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
-              strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
-              transform={`rotate(-90 ${CENTER} ${CENTER})`}
-            />
-          </>
-        )}
-
-        {/* 33 Spherical Prayer Beads */}
         <G>
           {beads.map((bead) => (
-            <G key={bead.id}>
-              {/* Subtle bead glow if active */}
-              {bead.isBeadActive && (
+            <G key={bead.id} opacity={bead.isActive ? 1 : 0.52}>
+              {bead.isActive && (
                 <Circle
                   cx={bead.bx}
                   cy={bead.by}
-                  r={BEAD_SIZE + 2}
-                  fill={colors.goldLight}
-                  opacity={0.25}
+                  r={BEAD_SIZE + 2.4}
+                  fill={theme.warm}
+                  opacity={0.2}
                 />
               )}
-              {/* 3D Sphere Bead */}
               <Circle
                 cx={bead.bx}
                 cy={bead.by}
                 r={BEAD_SIZE}
-                fill={bead.isBeadActive ? 'url(#goldBeadSphere)' : 'url(#jadeBeadSphere)'}
-                stroke={bead.isBeadActive ? colors.goldLight : 'rgba(42, 114, 88, 0.4)'}
+                fill={bead.isActive ? 'url(#activeBeadSphere)' : 'url(#inactiveBeadSphere)'}
+                stroke={bead.isActive ? theme.warmBright : theme.accentMuted}
                 strokeWidth={0.6}
               />
             </G>
           ))}
         </G>
 
-        {/* Top Bead Finial Ornament (Shahid / Head Finial at 12 o'clock) */}
         <G transform={`translate(${CENTER}, ${CENTER - BEAD_RADIUS})`}>
-          <Circle cx={0} cy={-BEAD_SIZE - 2} r={3} fill={colors.goldBright} />
-          <Path
-            d="M -2,-8 L 0,-13 L 2,-8 Z"
-            fill={colors.gold}
-            stroke={colors.goldLight}
-            strokeWidth={0.6}
-          />
+          <Circle cx={0} cy={-BEAD_SIZE - 2} r={3} fill={theme.warmBright} />
+          <Path d="M -2,-8 L 0,-13 L 2,-8 Z" fill={theme.warm} stroke={theme.warmBright} strokeWidth={0.6} />
         </G>
 
-        {/* Glowing Head Bead Marker on the Progress Arc */}
         {progress > 0 && progress < 1 && (
           <G>
-            <Circle cx={headX} cy={headY} r={7} fill={colors.goldBright} opacity={0.35} />
-            <Circle cx={headX} cy={headY} r={4.5} fill={colors.goldBright} />
-            <Circle cx={headX} cy={headY} r={2} fill="#FFFFFF" />
+            <Circle cx={headX} cy={headY} r={7} fill={theme.warmBright} opacity={0.28} />
+            <Circle cx={headX} cy={headY} r={4.5} fill={theme.warmBright} />
+            <Circle cx={headX} cy={headY} r={2} fill={theme.text} />
           </G>
         )}
       </Svg>
 
-      {/* Ripple Wave on Tap */}
       <Animated.View
         pointerEvents="none"
         style={[
@@ -268,22 +292,18 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
             height: size * 0.68,
             borderRadius: (size * 0.68) / 2,
             opacity: rippleAnim.interpolate({
-              inputRange: [0, 0.4, 1],
-              outputRange: [0.65, 0.28, 0],
+              inputRange: [0, 0.35, 1],
+              outputRange: [0.42, 0.18, 0],
             }),
             transform: [
               {
-                scale: rippleAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [0.85, 1.3],
-                }),
+                scale: rippleAnim.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1.22] }),
               },
             ],
           },
         ]}
       />
 
-      {/* Core Interactive Disc */}
       <Animated.View
         style={[
           styles.interactiveDiscWrapper,
@@ -302,29 +322,25 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
           accessibilityHint="اضغط للتسبيح"
           accessibilityState={{ disabled }}
           disabled={disabled}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
+          onPressIn={runPressAnimation}
+          onPressOut={runReleaseAnimation}
           onPress={handlePress}
           style={({ pressed }) => [
             styles.touchArea,
-            { width: size * 0.62, height: size * 0.62, borderRadius: size * 0.31 },
+            { width: size * 0.64, height: size * 0.64, borderRadius: size * 0.32 },
             pressed && styles.pressed,
           ]}
         >
-          {/* Cycle Badge (Champagne Gold Pill matching mockup) */}
           <View style={styles.cyclePill}>
+            <View style={styles.cycleDot} />
             <Text style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
           </View>
 
-          {/* Animated Big Count Number in Radiant Gold */}
           <Animated.View style={{ transform: [{ scale: countPop }] }}>
             <Text
               style={[
                 styles.countText,
-                {
-                  fontSize: countFontSize,
-                  lineHeight: countFontSize * 1.18,
-                },
+                { fontSize: countFontSize, lineHeight: countFontSize * 1.14 },
               ]}
               numberOfLines={1}
             >
@@ -332,15 +348,13 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
             </Text>
           </Animated.View>
 
-          {/* Target Fraction Indicator */}
           <Text style={styles.targetText}>
-            الهدف: <Text style={styles.targetNumber}>{toArabicDigits(target)}</Text>
+            {toArabicDigits(count)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(target)}
           </Text>
 
-          {/* Status Badge */}
           {isComplete && (
             <View style={styles.completeStatusBadge}>
-              <Text style={styles.completeStatusText}>تم الورد بحمد الله ✓</Text>
+              <Text style={styles.completeStatusText}>اكتمل الورد</Text>
             </View>
           )}
         </Pressable>
@@ -349,84 +363,94 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  interactiveDiscWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-  },
-  touchArea: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    justifyContent: 'center',
-    padding: 8,
-  },
-  pressed: {
-    backgroundColor: 'rgba(223, 186, 107, 0.05)',
-  },
-  ripple: {
-    borderColor: colors.goldLight,
-    borderWidth: 1.8,
-    position: 'absolute',
-  },
-  cyclePill: {
-    backgroundColor: colors.goldPill,
-    borderRadius: 14,
-    marginBottom: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 3.5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cyclePillText: {
-    color: colors.onGold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  countText: {
-    color: colors.goldLight,
-    fontWeight: '800',
-    includeFontPadding: false,
-    letterSpacing: -1.5,
-    textAlign: 'center',
-    ...Platform.select({
-      ios: {
-        textShadowColor: 'rgba(232, 201, 126, 0.55)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 10,
-      },
-      android: {},
-    }),
-  },
-  targetText: {
-    color: colors.textMuted,
-    fontSize: 13,
-    marginTop: 2,
-  },
-  targetNumber: {
-    color: colors.goldText,
-    fontWeight: '700',
-  },
-  completeStatusBadge: {
-    backgroundColor: 'rgba(223, 186, 107, 0.16)',
-    borderColor: colors.goldBadgeBorder,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 2.5,
-  },
-  completeStatusText: {
-    color: colors.goldLight,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-});
+function createStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    container: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    interactiveDiscWrapper: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+    },
+    touchArea: {
+      alignItems: 'center',
+      backgroundColor: theme.ringInner,
+      borderColor: theme.surfaceBorder,
+      borderWidth: 1,
+      justifyContent: 'center',
+      padding: 8,
+    },
+    pressed: {
+      backgroundColor: theme.surfaceElevated,
+    },
+    ripple: {
+      borderColor: theme.warm,
+      borderWidth: 1.6,
+      position: 'absolute',
+    },
+    cyclePill: {
+      alignItems: 'center',
+      backgroundColor: theme.warmSurface,
+      borderColor: theme.warmBorder,
+      borderRadius: 14,
+      flexDirection: 'row',
+      gap: 5,
+      marginBottom: 7,
+      paddingHorizontal: 11,
+      paddingVertical: 4,
+    },
+    cycleDot: {
+      backgroundColor: theme.warm,
+      borderRadius: 4,
+      height: 5,
+      width: 5,
+    },
+    cyclePillText: {
+      color: theme.warm,
+      fontSize: 11,
+      fontWeight: '800',
+    },
+    countText: {
+      color: theme.warmBright,
+      fontWeight: '800',
+      includeFontPadding: false,
+      letterSpacing: -1.5,
+      textAlign: 'center',
+      ...Platform.select({
+        ios: {
+          textShadowColor: theme.trackGlow,
+          textShadowOffset: { width: 0, height: 2 },
+          textShadowRadius: 9,
+        },
+        android: {},
+      }),
+    },
+    targetText: {
+      color: theme.textMuted,
+      fontSize: 14,
+      fontWeight: '600',
+      marginTop: 7,
+    },
+    targetSeparator: {
+      color: theme.textDim,
+      fontSize: 12,
+      fontWeight: '500',
+    },
+    completeStatusBadge: {
+      backgroundColor: theme.successSurface,
+      borderColor: theme.successBorder,
+      borderRadius: 10,
+      borderWidth: 1,
+      marginTop: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    completeStatusText: {
+      color: theme.success,
+      fontSize: 10.5,
+      fontWeight: '800',
+    },
+  });
+}

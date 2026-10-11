@@ -1,6 +1,6 @@
 import Svg, { Circle, Defs, G, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
-import { colors } from '../theme';
+import { useTheme } from '../theme';
 
 type Props = {
   size: number;
@@ -8,6 +8,7 @@ type Props = {
 };
 
 export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
+  const { theme } = useTheme();
   const center = size / 2;
   const starRadiusOuter = size * 0.46;
   const starRadiusInner = size * 0.325;
@@ -40,13 +41,13 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
         <RadialGradient id="starRadialGlow" cx="50%" cy="50%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor="#1C4B3A" stopOpacity="0.45" />
-          <Stop offset="60%" stopColor="#0D261C" stopOpacity="0.2" />
-          <Stop offset="100%" stopColor="#040C08" stopOpacity="0" />
+          <Stop offset="0%" stopColor={theme.accent} stopOpacity="0.36" />
+          <Stop offset="60%" stopColor={theme.accentDeep} stopOpacity="0.18" />
+          <Stop offset="100%" stopColor={theme.background} stopOpacity="0" />
         </RadialGradient>
         <RadialGradient id="goldMedallionAura" cx="50%" cy="50%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor={colors.goldLight} stopOpacity="0.18" />
-          <Stop offset="50%" stopColor={colors.gold} stopOpacity="0.06" />
+          <Stop offset="0%" stopColor={theme.warmBright} stopOpacity="0.16" />
+          <Stop offset="50%" stopColor={theme.warm} stopOpacity="0.06" />
           <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </RadialGradient>
       </Defs>
@@ -59,8 +60,8 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
         {/* Main 8-Point Star with architectural emerald backdrop fill */}
         <Path
           d={starPath}
-          fill={colors.starFill}
-          stroke={colors.starBorder}
+          fill={theme.surfaceSoft}
+          stroke={theme.warmBorder}
           strokeWidth={1.5}
           strokeLinejoin="round"
         />
@@ -69,7 +70,7 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
         <Path
           d={innerStarPath}
           fill="none"
-          stroke={colors.starInnerBorder}
+          stroke={theme.surfaceBorder}
           strokeWidth={0.9}
           strokeLinejoin="round"
         />
@@ -80,7 +81,7 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
           y={center - starRadiusInner * 0.9}
           width={starRadiusInner * 1.8}
           height={starRadiusInner * 1.8}
-          stroke={colors.starBorder}
+          stroke={theme.warmBorder}
           strokeWidth={0.8}
           fill="none"
           opacity={0.4}
@@ -92,7 +93,7 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
           y={center - starRadiusInner * 0.9}
           width={starRadiusInner * 1.8}
           height={starRadiusInner * 1.8}
-          stroke={colors.starBorder}
+          stroke={theme.warmBorder}
           strokeWidth={0.8}
           fill="none"
           transform={`rotate(45 ${center} ${center})`}
@@ -104,7 +105,7 @@ export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
           cx={center}
           cy={center}
           r={starRadiusOuter * 0.72}
-          stroke={colors.starInnerBorder}
+          stroke={theme.surfaceBorder}
           strokeWidth={0.7}
           strokeDasharray="3 5"
           fill="none"

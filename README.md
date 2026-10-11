@@ -80,13 +80,13 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 
 ## ✨ Key Features
 
-### 📿 1. Interactive 33-Bead Luminous Tasbeeh Ring
-- **Physical Prayer Bead Ring**: An outer track of 33 luminous beads inspired by traditional misbaha prayer beads. Each bead illuminates in imperial gold with each individual tap (cycling every 33 counts like a traditional misbaha loop), while the inner golden arc reflects overall target completion.
-- **Micro-Animations & Physics**: Fluid spring recoil (`Animated.spring`) on touch, radiating light-wave ripples, and bouncy number pop on every increment.
+### 📿 1. Interactive Adaptive Tasbeeh Ring
+- **Goal-Aware Prayer Beads**: A compact ring of luminous beads inspired by traditional misbaha prayer beads. Completed beads become distinct while upcoming beads stay subdued; the animated progress arc preserves precise progress for targets from 33 to 1000 and custom goals.
+- **Micro-Animations & Physics**: Fluid spring recoil (`Animated.spring`) on touch, restrained light-wave ripples, and a subtle number pop on every increment, with reduced-motion support.
 - **Target Completion Flourish**: Soft rhythmic pulse animation and subtle success haptic vibration upon completing your goal.
 
 ### 🌟 2. Sacred Islamic Geometric Backdrop
-- An SVG vector background featuring the **8-Pointed Islamic Star** (*Khatam Suleiman*) and arabesque framing with gentle celestial emerald and champagne gold ambient glow.
+- An SVG vector background featuring the **8-Pointed Islamic Star** (*Khatam Suleiman*) and arabesque framing with a gentle theme-aware ambient glow.
 
 ### 📚 3. Authentic Dhikr Library with Full Vowel Marks (Tashkeel)
 - Fully diacritized Arabic phrases accompanied by their authentic Hadith references (*Sahih al-Bukhari*, *Sahih Muslim*, *Muttafaqun 'Alayh*).
@@ -104,7 +104,10 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 ### 📳 6. Customizable Haptic Touch Feedback
 - Fine-tuned vibrational pulses powered by `expo-haptics` that differentiate between individual bead counts and goal completion.
 
-### 🔒 7. 100% Offline & Absolute Privacy
+### 🎨 7. Three Complete Visual Identities
+- Switch instantly between Midnight Sapphire, Royal Amethyst, and Soft Ivory from Settings. Each theme coordinates the background, surfaces, ring, beads, controls, typography, borders, and completion feedback, and the selected theme is saved locally.
+
+### 🔒 8. 100% Offline & Absolute Privacy
 - **Zero Ads, Zero Trackers**: No analytics SDKs, no third-party network calls.
 - **Zero Permissions**: Requires neither internet access nor media/storage permissions.
 - **Local Persistence**: State and preferences are saved locally on your device via `AsyncStorage`.
@@ -191,14 +194,15 @@ Zekr/
 ├── assets/                       # App icons, splash screens, and adaptive assets
 ├── src/
 │   ├── components/
-│   │   ├── CounterRing.tsx       # Interactive 33-bead tasbeeh ring & spring animations
+│   │   ├── CounterRing.tsx       # Adaptive goal-progress tasbeeh ring & spring animations
 │   │   ├── IslamicGeometry.tsx   # 8-point sacred star vector motif & ambient glows
 │   │   ├── Icons.tsx             # Clean SVG vector icon collection
-│   │   └── Modals.tsx            # Dhikr library sheet, target presets, & settings
+│   │   └── Modals.tsx            # Dhikr library, target presets, settings, & theme selector
 │   ├── arabic.ts                 # Arabic number formatting, ordinals, and normalization
 │   ├── counter.ts                # Dhikr database, hadith virtues, reducer & persistence sanitize
 │   ├── storage.ts                # Local storage interface via AsyncStorage
-│   └── theme.ts                  # Design tokens, celestial emerald & royal gold palette
+│   ├── theme.ts                  # Semantic tokens for all three visual identities
+│   └── ThemeProvider.tsx         # Runtime theme selection and local preference restore
 ├── App.tsx                       # Main application screen and dock orchestration
 ├── app.json                      # Expo application manifest & permission lockdown
 ├── index.ts                      # Application root entry point

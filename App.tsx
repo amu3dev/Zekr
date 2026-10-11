@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   AppState,
   Platform,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatArabicNumber, getCycleText, toArabicDigits } from './src/arabic';
+import { toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
 import {
   BookIcon,
@@ -43,10 +43,18 @@ import {
   initialCounterState,
   PRESET_TARGETS,
 } from './src/counter';
+import { ThemeProvider } from './src/ThemeProvider';
+import { useTheme } from './src/theme';
+import type { ThemeTokens } from './src/theme';
 import { loadCounterState, saveCounterState } from './src/storage';
-import { colors } from './src/theme';
 
-type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | 'resetStatsConfirm' | null;
+type OpenModal =
+  | 'settings'
+  | 'customTarget'
+  | 'dhikrPicker'
+  | 'resetConfirm'
+  | 'resetStatsConfirm'
+  | null;
 
 function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
   if (!enabled) return;
@@ -60,6 +68,8 @@ function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
 }
 
 function CounterScreen() {
+  const { theme } = useTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const [state, dispatch] = useReducer(counterReducer, initialCounterState);
@@ -77,20 +87,20 @@ function CounterScreen() {
     });
   }, []);
 
-  // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps
+  // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps.
   useEffect(() => {
     if (!isLoaded) return;
     const timer = setTimeout(() => {
-      saveCounterState(state);
+      void saveCounterState(state);
     }, 400);
     return () => clearTimeout(timer);
   }, [isLoaded, state]);
 
-  // Flush latest state immediately when app goes to background or becomes inactive
+  // Flush the latest state when the app leaves the foreground.
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState.match(/inactive|background/) && isLoaded) {
-        saveCounterState(stateRef.current);
+        void saveCounterState(stateRef.current);
       }
     });
     return () => subscription.remove();
@@ -99,10 +109,9 @@ function CounterScreen() {
   const dhikr = getDhikr(state.dhikrId);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
   const isComplete = state.count >= state.target;
-
   const availableHeight = height - insets.top - insets.bottom;
-  const ringSize = Math.round(Math.max(210, Math.min(width - 48, availableHeight * 0.40, 320)));
-  const geometrySize = ringSize * 1.28;
+  const ringSize = Math.round(Math.max(200, Math.min(width - 28, availableHeight * 0.44, 350)));
+  const geometrySize = ringSize * 1.16;
   const canUndo = state.count > 0;
 
   const handleIncrement = () => {
@@ -112,10 +121,9 @@ function CounterScreen() {
   };
 
   const handleUndo = () => {
-    if (canUndo) {
-      dispatch({ type: 'undo' });
-      playHaptic('tap', state.hapticsEnabled);
-    }
+    if (!canUndo) return;
+    dispatch({ type: 'undo' });
+    playHaptic('tap', state.hapticsEnabled);
   };
 
   const handleNextCycle = () => {
@@ -154,23 +162,29 @@ function CounterScreen() {
 
   return (
     <LinearGradient
-      colors={[colors.backgroundStart, colors.backgroundMid, colors.backgroundEnd]}
-      locations={[0, 0.45, 1]}
+      colors={[theme.backgroundStart, theme.backgroundMid, theme.backgroundEnd]}
+      locations={[0, 0.52, 1]}
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={styles.screen}
     >
-      <StatusBar style="light" />
+      <StatusBar style={theme.statusBarStyle} />
+      <View pointerEvents="none" style={styles.backgroundOrb} />
 
       {isLoaded && (
         <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-          {/* Top Bar Header (Matching Mockup: Menu Icon, Glowing Title, Dual-Line Pill) */}
           <View
             accessibilityElementsHidden={state.fullScreenTap}
             importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
             style={styles.topBar}
           >
-            {/* Left Frosted Menu Button */}
+            <View style={styles.headerSpacer} />
+            <View style={styles.titleSection}>
+              <Text style={styles.appTitle} accessibilityRole="header">
+                ذِكر
+              </Text>
+              <Text style={styles.appSubtitle}>وردك في سكينة</Text>
+            </View>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="القائمة والإعدادات"
@@ -178,26 +192,10 @@ function CounterScreen() {
               onPress={() => setOpenModal('settings')}
               style={({ pressed }) => [styles.menuButton, pressed && styles.pressed]}
             >
-              <MenuIcon size={19} color={colors.goldLight} />
+              <MenuIcon size={20} color={theme.warm} />
             </Pressable>
-
-            {/* Center Majestic Title */}
-            <View style={styles.titleSection}>
-              <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
-            </View>
-
-            {/* Right Dual-Line Session & Total Pill */}
-            <View style={styles.sessionPill}>
-              <Text style={styles.sessionPillTop}>
-                {getCycleText(state.cycle)}
-              </Text>
-              <Text style={styles.sessionPillBottom}>
-                التعداد: {formatArabicNumber(state.totalSessionCount)}
-              </Text>
-            </View>
           </View>
 
-          {/* Main Scroll Content */}
           <ScrollView
             accessibilityElementsHidden={state.fullScreenTap}
             bounces={false}
@@ -206,16 +204,14 @@ function CounterScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.scrollContent}>
-              {/* 1. Dhikr Showcase Card with Centered Rosette Clasp */}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
                 onPress={() => setOpenModal('dhikrPicker')}
                 style={({ pressed }) => [styles.dhikrCard, pressed && styles.pressed]}
               >
-                {/* Decorative Rosette Clasp Medallion at the top border */}
                 <View style={styles.rosetteWrapper} pointerEvents="none">
-                  <RosetteClasp size={30} />
+                  <RosetteClasp size={28} />
                 </View>
 
                 <View style={styles.dhikrCardTop}>
@@ -224,7 +220,7 @@ function CounterScreen() {
                   </View>
                   <View style={styles.changeDhikrHint}>
                     <Text style={styles.changeDhikrText}>تغيير الذكر</Text>
-                    <ChevronDownIcon size={13} color={colors.goldLight} />
+                    <ChevronDownIcon size={13} color={theme.warm} />
                   </View>
                 </View>
 
@@ -234,7 +230,7 @@ function CounterScreen() {
 
                 {dhikr.virtue ? (
                   <View style={styles.virtueSnippet}>
-                    <SparkleIcon size={12} color={colors.goldLight} />
+                    <SparkleIcon size={12} color={theme.warm} />
                     <Text style={styles.virtueSnippetText} numberOfLines={1}>
                       {dhikr.virtue}
                     </Text>
@@ -242,14 +238,10 @@ function CounterScreen() {
                 ) : null}
               </Pressable>
 
-              {/* 2. Interactive Central Ring & Sacred Islamic Geometry */}
               <View style={styles.ringSection}>
-                {/* Architectural 8-Point Star Geometry in Background */}
                 <View pointerEvents="none" style={styles.geometryWrapper}>
-                  <IslamicGeometryBackground size={geometrySize} opacity={0.9} />
+                  <IslamicGeometryBackground size={geometrySize} opacity={0.72} />
                 </View>
-
-                {/* 33-Bead Spherical Tasbeeh Ring */}
                 <CounterRing
                   size={ringSize}
                   count={state.count}
@@ -260,12 +252,16 @@ function CounterScreen() {
                 />
               </View>
 
-              {/* 3. Completion Banner (Shows when target is reached) */}
               {isComplete ? (
                 <View style={styles.completionBanner}>
                   <View style={styles.completionInfo}>
-                    <SparkleIcon size={18} color={colors.goldLight} />
-                    <Text style={styles.completionTitle}>مبارك! أتممت الورد بنجاح</Text>
+                    <View style={styles.completionIconWrap}>
+                      <SparkleIcon size={16} color={theme.success} />
+                    </View>
+                    <View style={styles.completionCopy}>
+                      <Text style={styles.completionTitle}>اكتمل الورد</Text>
+                      <Text style={styles.completionSubtitle}>ابدأ دورة جديدة عندما تكون مستعدًا</Text>
+                    </View>
                   </View>
                   <Pressable
                     accessibilityRole="button"
@@ -273,18 +269,17 @@ function CounterScreen() {
                     onPress={handleNextCycle}
                     style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
                   >
-                    <Text style={styles.nextCycleText}>ابدأ الدورة التالية</Text>
-                    <NextCycleIcon size={15} color={colors.onGold} />
+                    <Text style={styles.nextCycleText}>الدورة التالية</Text>
+                    <NextCycleIcon size={15} color={theme.onWarm} />
                   </Pressable>
                 </View>
               ) : null}
 
-              {/* 4. Target Selector Chips (Matching Mockup Pill Buttons) */}
-              <View
-                style={styles.targetSection}
-                accessibilityRole="radiogroup"
-                accessibilityLabel="الهدف"
-              >
+              <View style={styles.targetSection} accessibilityRole="radiogroup" accessibilityLabel="الهدف">
+                <View style={styles.targetHeading}>
+                  <Text style={styles.targetTitle}>الهدف</Text>
+                  <Text style={styles.targetHint}>اختر مقدار الورد</Text>
+                </View>
                 <View style={styles.targetRow}>
                   {PRESET_TARGETS.map((target) => {
                     const isSelected = state.target === target;
@@ -304,12 +299,7 @@ function CounterScreen() {
                           pressed && styles.pressed,
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.targetChipText,
-                            isSelected && styles.targetChipTextSelected,
-                          ]}
-                        >
+                        <Text style={[styles.targetChipText, isSelected && styles.targetChipTextSelected]}>
                           {toArabicDigits(target)}
                         </Text>
                       </Pressable>
@@ -332,72 +322,54 @@ function CounterScreen() {
                       pressed && styles.pressed,
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.targetChipText,
-                        !isPresetTarget && styles.targetChipTextSelected,
-                      ]}
-                    >
+                    <Text style={[styles.targetChipText, !isPresetTarget && styles.targetChipTextSelected]}>
                       {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص'}
                     </Text>
                   </Pressable>
                 </View>
               </View>
 
-              {/* 5. Floating Glassmorphic Dock (Matching Mockup: 5 Balanced Actions) */}
               <View style={styles.bottomDock}>
-                {/* 1. Undo Button */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="تراجع"
                   accessibilityState={{ disabled: !canUndo }}
                   disabled={!canUndo}
                   onPress={handleUndo}
-                  style={({ pressed }) => [
-                    styles.dockItem,
-                    !canUndo && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}
+                  style={({ pressed }) => [styles.dockItem, !canUndo && styles.disabled, pressed && styles.pressed]}
                 >
-                  <UndoIcon size={19} color={canUndo ? colors.iconGold : colors.textDim} />
+                  <UndoIcon size={19} color={canUndo ? theme.iconAccent : theme.textFaint} />
                   <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>تراجع</Text>
                 </Pressable>
 
                 <View style={styles.dockDivider} />
 
-                {/* 2. Reset Button */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="إعادة تعيين"
                   accessibilityState={{ disabled: !canUndo }}
                   disabled={!canUndo}
                   onPress={() => setOpenModal('resetConfirm')}
-                  style={({ pressed }) => [
-                    styles.dockItem,
-                    !canUndo && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}
+                  style={({ pressed }) => [styles.dockItem, !canUndo && styles.disabled, pressed && styles.pressed]}
                 >
-                  <ResetIcon size={19} color={canUndo ? colors.iconGold : colors.textDim} />
+                  <ResetIcon size={19} color={canUndo ? theme.iconAccent : theme.textFaint} />
                   <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>إعادة تعيين</Text>
                 </Pressable>
 
                 <View style={styles.dockDivider} />
 
-                {/* 3. Dhikr Library Shortcut */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="مكتبة الأذكار"
                   onPress={() => setOpenModal('dhikrPicker')}
                   style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
                 >
-                  <BookIcon size={19} color={colors.iconGold} />
+                  <BookIcon size={19} color={theme.iconAccent} />
                   <Text style={styles.dockItemLabel}>الأذكار</Text>
                 </Pressable>
 
                 <View style={styles.dockDivider} />
 
-                {/* 4. FullScreen Free Tap Toggle */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="النقر الحر"
@@ -407,20 +379,19 @@ function CounterScreen() {
                   }}
                   style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
                 >
-                  <FullScreenIcon size={19} color={colors.iconGold} />
+                  <FullScreenIcon size={19} color={theme.iconAccent} />
                   <Text style={styles.dockItemLabel}>النقر الحر</Text>
                 </Pressable>
 
                 <View style={styles.dockDivider} />
 
-                {/* 5. Settings */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="الإعدادات"
                   onPress={() => setOpenModal('settings')}
                   style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
                 >
-                  <SettingsIcon size={19} color={colors.iconGold} />
+                  <SettingsIcon size={19} color={theme.iconAccent} />
                   <Text style={styles.dockItemLabel}>الإعدادات</Text>
                 </Pressable>
               </View>
@@ -429,24 +400,15 @@ function CounterScreen() {
             </View>
           </ScrollView>
 
-          {/* Full Screen Free Tap Mode HUD Overlay (Matching Mockup screen-freetap.png) */}
           {state.fullScreenTap ? (
-            <View
-              accessibilityViewIsModal={true}
-              style={styles.freeTapOverlay}
-            >
+            <View accessibilityViewIsModal style={styles.freeTapOverlay}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`النقر الحر لعدّاد ${dhikr.title}`}
                 accessibilityHint="اضغط لزيادة العدّاد، واستخدم زر إنهاء الوضع للعودة"
-                accessibilityValue={{
-                  text: `${toArabicDigits(state.count)} من ${toArabicDigits(state.target)}`,
-                }}
+                accessibilityValue={{ text: `${toArabicDigits(state.count)} من ${toArabicDigits(state.target)}` }}
                 onPress={handleIncrement}
-                style={({ pressed }) => [
-                  styles.freeTapSurface,
-                  pressed && styles.freeTapSurfacePressed,
-                ]}
+                style={({ pressed }) => [styles.freeTapSurface, pressed && styles.freeTapSurfacePressed]}
               />
 
               <View pointerEvents="box-none" style={styles.freeTapHud}>
@@ -470,7 +432,7 @@ function CounterScreen() {
                     pressed && styles.pressed,
                   ]}
                 >
-                  <CloseIcon size={15} color={colors.goldLight} />
+                  <CloseIcon size={15} color={theme.warm} />
                   <Text style={styles.freeTapExitText}>إنهاء الوضع</Text>
                 </Pressable>
               </View>
@@ -479,7 +441,6 @@ function CounterScreen() {
         </View>
       )}
 
-      {/* Modals & Sheets */}
       <DhikrPickerModal
         visible={openModal === 'dhikrPicker'}
         selectedId={state.dhikrId}
@@ -542,364 +503,403 @@ function CounterScreen() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <CounterScreen />
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <CounterScreen />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.backgroundStart,
-  },
-  root: {
-    direction: 'rtl',
-    flex: 1,
-  },
-  topBar: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    zIndex: 20,
-  },
-  menuButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: 'rgba(210, 230, 218, 0.16)',
-    borderRadius: 20,
-    borderWidth: 1,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  titleSection: {
-    alignItems: 'center',
-  },
-  appTitle: {
-    color: colors.goldLight,
-    fontSize: 27,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-    ...Platform.select({
-      ios: {
-        textShadowColor: 'rgba(224, 194, 128, 0.5)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 8,
-      },
-      android: {},
-    }),
-  },
-  sessionPill: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(223, 186, 107, 0.15)',
-    borderColor: 'rgba(247, 229, 169, 0.35)',
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  sessionPillTop: {
-    color: colors.goldLight,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  sessionPillBottom: {
-    color: colors.textMuted,
-    fontSize: 10,
-    marginTop: 1,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  scrollContent: {
-    alignItems: 'center',
-    flexGrow: 1,
-    gap: 16,
-    justifyContent: 'space-between',
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  dhikrCard: {
-    backgroundColor: colors.backgroundCard,
-    borderColor: 'rgba(224, 194, 128, 0.38)',
-    borderRadius: 24,
-    borderWidth: 1.2,
-    maxWidth: 440,
-    paddingHorizontal: 18,
-    paddingBottom: 16,
-    paddingTop: 18,
-    position: 'relative',
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
-    elevation: 5,
-    zIndex: 20,
-  },
-  rosetteWrapper: {
-    alignSelf: 'center',
-    position: 'absolute',
-    top: -15,
-  },
-  dhikrCardTop: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  dhikrCategoryBadge: {
-    backgroundColor: colors.goldBadge,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  dhikrCategoryText: {
-    color: colors.goldLight,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  changeDhikrHint: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4,
-  },
-  changeDhikrText: {
-    color: colors.textDim,
-    fontSize: 11.5,
-  },
-  dhikrPhraseText: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '700',
-    lineHeight: 32,
-    textAlign: 'center',
-  },
-  dhikrPhraseLong: {
-    fontSize: 15.5,
-    lineHeight: 25,
-  },
-  virtueSnippet: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: 12,
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  virtueSnippetText: {
-    color: colors.textDim,
-    flex: 1,
-    fontSize: 11,
-  },
-  ringSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 4,
-    position: 'relative',
-  },
-  geometryWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-  },
-  completionBanner: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(223, 186, 107, 0.12)',
-    borderColor: colors.goldBadgeBorder,
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    maxWidth: 440,
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    width: '100%',
-  },
-  completionInfo: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  completionTitle: {
-    color: colors.goldLight,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  nextCycleButton: {
-    alignItems: 'center',
-    backgroundColor: colors.goldPill,
-    borderRadius: 12,
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  nextCycleText: {
-    color: colors.onGold,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  targetSection: {
-    maxWidth: 440,
-    width: '100%',
-    zIndex: 20,
-  },
-  targetRow: {
-    flexDirection: 'row',
-    gap: 8,
-    width: '100%',
-  },
-  targetChip: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 20,
-    borderWidth: 1,
-    flex: 1,
-    height: 42,
-    justifyContent: 'center',
-  },
-  customChip: {
-    flex: 1.25,
-  },
-  targetChipSelected: {
-    backgroundColor: colors.goldPill,
-    borderColor: colors.goldPill,
-  },
-  targetChipText: {
-    color: colors.textMuted,
-    fontSize: 13.5,
-    fontWeight: '600',
-  },
-  targetChipTextSelected: {
-    color: colors.onGold,
-    fontWeight: '800',
-  },
-  bottomDock: {
-    alignItems: 'center',
-    backgroundColor: colors.dockBackground,
-    borderColor: colors.dockBorder,
-    borderRadius: 28,
-    borderWidth: 1.2,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    maxWidth: 440,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
-    zIndex: 20,
-  },
-  dockItem: {
-    alignItems: 'center',
-    flex: 1,
-    gap: 4,
-    justifyContent: 'center',
-    paddingVertical: 2,
-  },
-  dockItemLabel: {
-    color: colors.textMuted,
-    fontSize: 10.5,
-    fontWeight: '600',
-  },
-  dockDivider: {
-    backgroundColor: colors.dockDivider,
-    height: 24,
-    width: 1,
-  },
-  privacyNote: {
-    color: colors.textFaint,
-    fontSize: 10.5,
-    textAlign: 'center',
-  },
-  freeTapOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(3, 10, 7, 0.94)',
-    zIndex: 100,
-  },
-  freeTapSurface: {
-    ...StyleSheet.absoluteFill,
-  },
-  freeTapSurfacePressed: {
-    backgroundColor: 'rgba(223, 186, 107, 0.06)',
-  },
-  freeTapHud: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  freeTapStatus: {
-    alignItems: 'center',
-  },
-  freeTapEyebrow: {
-    color: colors.goldLight,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 16,
-  },
-  freeTapCount: {
-    color: colors.goldLight,
-    fontSize: 92,
-    fontWeight: '300',
-    letterSpacing: -2,
-    lineHeight: 110,
-    ...Platform.select({
-      ios: {
-        textShadowColor: 'rgba(224, 194, 128, 0.45)',
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 16,
-      },
-      android: {},
-    }),
-  },
-  freeTapTarget: {
-    color: colors.textMuted,
-    fontSize: 14.5,
-    marginTop: 4,
-  },
-  freeTapHint: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 26,
-  },
-  freeTapExitButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.07)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 22,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 7,
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    position: 'absolute',
-  },
-  freeTapExitText: {
-    color: colors.goldLight,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  pressed: {
-    opacity: 0.72,
-    transform: [{ scale: 0.97 }],
-  },
-  disabled: {
-    opacity: 0.35,
-  },
-  disabledText: {
-    color: colors.textFaint,
-  },
-});
+function createStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    screen: {
+      backgroundColor: theme.background,
+      flex: 1,
+    },
+    backgroundOrb: {
+      backgroundColor: theme.accent,
+      borderRadius: 180,
+      height: 260,
+      opacity: 0.08,
+      position: 'absolute',
+      right: -120,
+      top: -100,
+      width: 260,
+    },
+    root: {
+      direction: 'rtl',
+      flex: 1,
+    },
+    topBar: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 9,
+      zIndex: 20,
+    },
+    headerSpacer: {
+      height: 42,
+      width: 42,
+    },
+    menuButton: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 21,
+      borderWidth: 1,
+      height: 42,
+      justifyContent: 'center',
+      width: 42,
+    },
+    titleSection: {
+      alignItems: 'center',
+    },
+    appTitle: {
+      color: theme.text,
+      fontSize: 26,
+      fontWeight: '800',
+      letterSpacing: -0.5,
+      ...Platform.select({
+        ios: {
+          textShadowColor: theme.warmSurface,
+          textShadowOffset: { width: 0, height: 2 },
+          textShadowRadius: 8,
+        },
+        android: {},
+      }),
+    },
+    appSubtitle: {
+      color: theme.textDim,
+      fontSize: 10.5,
+      marginTop: 1,
+    },
+    scrollContainer: {
+      flexGrow: 1,
+      paddingBottom: 12,
+    },
+    scrollContent: {
+      alignItems: 'center',
+      flexGrow: 1,
+      gap: 15,
+      paddingHorizontal: 18,
+      paddingTop: 11,
+      width: '100%',
+    },
+    dhikrCard: {
+      backgroundColor: theme.surface,
+      borderColor: theme.warmBorder,
+      borderRadius: 22,
+      borderWidth: 1,
+      maxWidth: 440,
+      paddingBottom: 15,
+      paddingHorizontal: 17,
+      paddingTop: 17,
+      position: 'relative',
+      width: '100%',
+      shadowColor: theme.background,
+      shadowOffset: { width: 0, height: 7 },
+      shadowOpacity: 0.28,
+      shadowRadius: 14,
+      elevation: 4,
+      zIndex: 20,
+    },
+    rosetteWrapper: {
+      alignSelf: 'center',
+      position: 'absolute',
+      top: -14,
+    },
+    dhikrCardTop: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    dhikrCategoryBadge: {
+      backgroundColor: theme.warmSurface,
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    dhikrCategoryText: {
+      color: theme.warm,
+      fontSize: 11,
+      fontWeight: '700',
+    },
+    changeDhikrHint: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 4,
+    },
+    changeDhikrText: {
+      color: theme.textDim,
+      fontSize: 11.5,
+    },
+    dhikrPhraseText: {
+      color: theme.text,
+      fontSize: 20,
+      fontWeight: '700',
+      lineHeight: 32,
+      textAlign: 'center',
+    },
+    dhikrPhraseLong: {
+      fontSize: 15.5,
+      lineHeight: 25,
+    },
+    virtueSnippet: {
+      alignItems: 'center',
+      backgroundColor: theme.background,
+      borderRadius: 12,
+      flexDirection: 'row',
+      gap: 6,
+      marginTop: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    virtueSnippetText: {
+      color: theme.textDim,
+      flex: 1,
+      fontSize: 11,
+    },
+    ringSection: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: 1,
+      position: 'relative',
+    },
+    geometryWrapper: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'absolute',
+    },
+    completionBanner: {
+      alignItems: 'center',
+      backgroundColor: theme.successSurface,
+      borderColor: theme.successBorder,
+      borderRadius: 18,
+      borderWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      maxWidth: 440,
+      paddingHorizontal: 13,
+      paddingVertical: 10,
+      width: '100%',
+    },
+    completionInfo: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      flex: 1,
+      gap: 8,
+    },
+    completionIconWrap: {
+      alignItems: 'center',
+      backgroundColor: theme.successSurface,
+      borderRadius: 16,
+      height: 30,
+      justifyContent: 'center',
+      width: 30,
+    },
+    completionCopy: {
+      flex: 1,
+    },
+    completionTitle: {
+      color: theme.success,
+      fontSize: 13,
+      fontWeight: '800',
+    },
+    completionSubtitle: {
+      color: theme.textDim,
+      fontSize: 10.5,
+      marginTop: 2,
+    },
+    nextCycleButton: {
+      alignItems: 'center',
+      backgroundColor: theme.warm,
+      borderRadius: 12,
+      flexDirection: 'row',
+      gap: 5,
+      marginLeft: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    nextCycleText: {
+      color: theme.onWarm,
+      fontSize: 11,
+      fontWeight: '800',
+    },
+    targetSection: {
+      maxWidth: 440,
+      width: '100%',
+      zIndex: 20,
+    },
+    targetHeading: {
+      alignItems: 'baseline',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+      paddingHorizontal: 2,
+    },
+    targetTitle: {
+      color: theme.text,
+      fontSize: 14,
+      fontWeight: '800',
+    },
+    targetHint: {
+      color: theme.textDim,
+      fontSize: 11,
+    },
+    targetRow: {
+      flexDirection: 'row',
+      gap: 7,
+      width: '100%',
+    },
+    targetChip: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 18,
+      borderWidth: 1,
+      flex: 1,
+      height: 42,
+      justifyContent: 'center',
+    },
+    customChip: {
+      flex: 1.25,
+    },
+    targetChipSelected: {
+      backgroundColor: theme.warm,
+      borderColor: theme.warm,
+    },
+    targetChipText: {
+      color: theme.textMuted,
+      fontSize: 13.5,
+      fontWeight: '600',
+    },
+    targetChipTextSelected: {
+      color: theme.onWarm,
+      fontWeight: '800',
+    },
+    bottomDock: {
+      alignItems: 'center',
+      backgroundColor: theme.dockBackground,
+      borderColor: theme.dockBorder,
+      borderRadius: 26,
+      borderWidth: 1,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      maxWidth: 440,
+      paddingHorizontal: 7,
+      paddingVertical: 9,
+      width: '100%',
+      shadowColor: theme.background,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      elevation: 7,
+      zIndex: 20,
+    },
+    dockItem: {
+      alignItems: 'center',
+      flex: 1,
+      gap: 4,
+      justifyContent: 'center',
+      minHeight: 42,
+      paddingVertical: 2,
+    },
+    dockItemLabel: {
+      color: theme.textMuted,
+      fontSize: 10,
+      fontWeight: '600',
+    },
+    dockDivider: {
+      backgroundColor: theme.dockDivider,
+      height: 25,
+      width: 1,
+    },
+    privacyNote: {
+      color: theme.textFaint,
+      fontSize: 10.5,
+      textAlign: 'center',
+    },
+    freeTapOverlay: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: theme.background,
+      zIndex: 100,
+    },
+    freeTapSurface: {
+      ...StyleSheet.absoluteFill,
+    },
+    freeTapSurfacePressed: {
+      backgroundColor: theme.warmSurface,
+    },
+    freeTapHud: {
+      ...StyleSheet.absoluteFill,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+    },
+    freeTapStatus: {
+      alignItems: 'center',
+    },
+    freeTapEyebrow: {
+      color: theme.warm,
+      fontSize: 14,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      marginBottom: 16,
+    },
+    freeTapCount: {
+      color: theme.warm,
+      fontSize: 92,
+      fontWeight: '300',
+      letterSpacing: -2,
+      lineHeight: 110,
+      ...Platform.select({
+        ios: {
+          textShadowColor: theme.warmSurface,
+          textShadowOffset: { width: 0, height: 2 },
+          textShadowRadius: 16,
+        },
+        android: {},
+      }),
+    },
+    freeTapTarget: {
+      color: theme.textMuted,
+      fontSize: 14.5,
+      marginTop: 4,
+    },
+    freeTapHint: {
+      color: theme.textDim,
+      fontSize: 12,
+      marginTop: 26,
+    },
+    freeTapExitButton: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 22,
+      borderWidth: 1,
+      flexDirection: 'row',
+      gap: 7,
+      paddingHorizontal: 20,
+      paddingVertical: 11,
+      position: 'absolute',
+    },
+    freeTapExitText: {
+      color: theme.warm,
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    pressed: {
+      opacity: 0.72,
+      transform: [{ scale: 0.98 }],
+    },
+    disabled: {
+      opacity: 0.38,
+    },
+    disabledText: {
+      color: theme.textFaint,
+    },
+  });
+}

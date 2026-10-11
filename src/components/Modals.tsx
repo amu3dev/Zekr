@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -14,7 +14,8 @@ import {
 
 import { formatArabicNumber, normalizeDigits, toArabicDigits } from '../arabic';
 import { DHIKR_OPTIONS, DhikrOption, isValidTarget, MAX_TARGET, MIN_TARGET } from '../counter';
-import { colors } from '../theme';
+import { THEME_OPTIONS, useTheme } from '../theme';
+import type { ThemeTokens } from '../theme';
 import { BookIcon, CheckIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
 
 type ShellProps = {
@@ -25,19 +26,33 @@ type ShellProps = {
   children: ReactNode;
 };
 
+function useModalStyles() {
+  const { theme } = useTheme();
+  return useMemo(() => createStyles(theme), [theme]);
+}
+
 function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps) {
+  const styles = useModalStyles();
+
   return (
-    <Modal animationType="fade" transparent statusBarTranslucent navigationBarTranslucent visible={visible} onRequestClose={onClose}>
+    <Modal
+      animationType="fade"
+      transparent
+      statusBarTranslucent
+      navigationBarTranslucent
+      visible={visible}
+      onRequestClose={onClose}
+    >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
         <Pressable accessibilityLabel="إغلاق" style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card} accessibilityViewIsModal>
-          {/* Top Sheet Handle matching mockup */}
           <View style={styles.sheetHandle} />
 
-          {/* Header */}
           <View style={styles.modalHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.title} accessibilityRole="header">{title}</Text>
+            <View style={styles.modalHeaderCopy}>
+              <Text style={styles.title} accessibilityRole="header">
+                {title}
+              </Text>
               {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
             </View>
             <Pressable
@@ -47,7 +62,7 @@ function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps)
               onPress={onClose}
               style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
             >
-              <CloseIcon size={18} color={colors.textMuted} />
+              <CloseIcon size={18} color={styles.closeIcon.color} />
             </Pressable>
           </View>
           {children}
@@ -66,6 +81,7 @@ function ActionButton({
   variant?: 'primary' | 'secondary' | 'danger';
   onPress: () => void;
 }) {
+  const styles = useModalStyles();
   const isPrimary = variant === 'primary';
   const isDanger = variant === 'danger';
 
@@ -108,10 +124,10 @@ type DhikrPickerProps = {
 };
 
 export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: DhikrPickerProps) {
+  const styles = useModalStyles();
   const [activeCategory, setActiveCategory] = useState<string>('الكل');
 
   const categories = ['الكل', 'تسابيح', 'أذكار جامعة', 'استغفار', 'صلاة على النبي'];
-
   const filteredDhikrs =
     activeCategory === 'الكل'
       ? DHIKR_OPTIONS
@@ -124,39 +140,34 @@ export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: Dhi
       subtitle="اختر الذكر المأثور لتبدأ ورده وفضله"
       onClose={onClose}
     >
-      {/* Category Pills */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoryScroll}
         style={styles.categoryContainer}
       >
-        {categories.map((cat) => {
-          const isSelected = activeCategory === cat;
+        {categories.map((category) => {
+          const isSelected = activeCategory === category;
           return (
             <Pressable
-              key={cat}
-              onPress={() => setActiveCategory(cat)}
+              key={category}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
+              onPress={() => setActiveCategory(category)}
               style={({ pressed }) => [
                 styles.categoryChip,
                 isSelected && styles.categoryChipSelected,
                 pressed && styles.pressed,
               ]}
             >
-              <Text
-                style={[
-                  styles.categoryChipText,
-                  isSelected && styles.categoryChipTextSelected,
-                ]}
-              >
-                {cat}
+              <Text style={[styles.categoryChipText, isSelected && styles.categoryChipTextSelected]}>
+                {category}
               </Text>
             </Pressable>
           );
         })}
       </ScrollView>
 
-      {/* Dhikr Cards List */}
       <ScrollView style={styles.dhikrList} showsVerticalScrollIndicator={false}>
         {filteredDhikrs.map((item) => {
           const isSelected = item.id === selectedId;
@@ -166,9 +177,7 @@ export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: Dhi
               accessibilityRole="radio"
               accessibilityLabel={item.phrase}
               accessibilityState={{ checked: isSelected }}
-              onPress={() => {
-                onSelect(item);
-              }}
+              onPress={() => onSelect(item)}
               style={({ pressed }) => [
                 styles.dhikrCard,
                 isSelected && styles.dhikrCardSelected,
@@ -186,7 +195,7 @@ export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: Dhi
                 </View>
                 {isSelected && (
                   <View style={styles.selectedCircle}>
-                    <CheckIcon size={14} color={colors.onGold} />
+                    <CheckIcon size={14} color={styles.selectedCheck.color} />
                   </View>
                 )}
               </View>
@@ -195,7 +204,7 @@ export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: Dhi
 
               {item.virtue ? (
                 <View style={styles.virtueBox}>
-                  <SparkleIcon size={13} color={colors.goldLight} />
+                  <SparkleIcon size={13} color={styles.warmIcon.color} />
                   <Text style={styles.virtueText} numberOfLines={2}>
                     {item.virtue}
                   </Text>
@@ -223,6 +232,7 @@ type CustomTargetProps = {
 const TARGET_PRESETS = [33, 99, 100, 300, 500, 1000];
 
 export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: CustomTargetProps) {
+  const styles = useModalStyles();
   const [prevTarget, setPrevTarget] = useState(currentTarget);
   const [text, setText] = useState(() => toArabicDigits(currentTarget));
   const [error, setError] = useState<string | null>(null);
@@ -255,6 +265,8 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
           return (
             <Pressable
               key={preset}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isPresetCurrent }}
               onPress={() => handleSave(preset)}
               style={({ pressed }) => [
                 styles.presetChip,
@@ -262,12 +274,7 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
                 pressed && styles.pressed,
               ]}
             >
-              <Text
-                style={[
-                  styles.presetChipText,
-                  isPresetCurrent && styles.presetChipTextSelected,
-                ]}
-              >
+              <Text style={[styles.presetChipText, isPresetCurrent && styles.presetChipTextSelected]}>
                 {toArabicDigits(preset)}
               </Text>
             </Pressable>
@@ -282,20 +289,24 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
         autoFocus
         keyboardType="number-pad"
         maxLength={4}
-        onChangeText={(val) => {
-          setText(val);
+        onChangeText={(value) => {
+          setText(value);
           setError(null);
         }}
         onSubmitEditing={() => handleSave()}
         placeholder="مثال: ٥٠"
-        placeholderTextColor={colors.textFaint}
+        placeholderTextColor={styles.inputPlaceholder.color}
         returnKeyType="done"
         style={[styles.input, error ? styles.inputError : null]}
         textAlign="center"
         value={text}
       />
 
-      {error && <Text style={styles.errorText} accessibilityLiveRegion="polite">{error}</Text>}
+      {error && (
+        <Text style={styles.errorText} accessibilityLiveRegion="polite">
+          {error}
+        </Text>
+      )}
 
       <View style={styles.actions}>
         <ActionButton label="حفظ الهدف" variant="primary" onPress={() => handleSave()} />
@@ -320,6 +331,67 @@ type SettingsProps = {
   onResetStats: () => void;
 };
 
+function ThemePreviewCard({
+  option,
+  selected,
+  onPress,
+}: {
+  option: ThemeTokens;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  const styles = useModalStyles();
+  const previewDots = Array.from({ length: 12 }, (_, index) => index);
+
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={`مظهر ${option.name}`}
+      accessibilityState={{ checked: selected }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.themeCard, selected && styles.themeCardSelected, pressed && styles.pressed]}
+    >
+      <View style={[styles.themePreview, { backgroundColor: option.background }]}>
+        <View style={[styles.previewHalo, { borderColor: option.surfaceBorder }]}>
+          <View style={[styles.previewProgress, { borderTopColor: option.warm, borderRightColor: option.warm }]} />
+          <View style={[styles.previewCore, { backgroundColor: option.surface }]}>
+            <Text style={[styles.previewCount, { color: option.warm }]}>١٢</Text>
+            <Text style={[styles.previewFraction, { color: option.textMuted }]}>من ٣٣</Text>
+          </View>
+          {previewDots.map((dot) => {
+            const angle = (dot / previewDots.length) * 2 * Math.PI - Math.PI / 2;
+            const radius = 38;
+            return (
+              <View
+                key={dot}
+                style={[
+                  styles.previewDot,
+                  {
+                    backgroundColor: dot < 5 ? option.warm : option.accentMuted,
+                    left: 47 + radius * Math.cos(angle),
+                    top: 47 + radius * Math.sin(angle),
+                  },
+                ]}
+              />
+            );
+          })}
+        </View>
+      </View>
+      <View style={styles.themeCardFooter}>
+        <View style={styles.themeCardCopy}>
+          <Text style={styles.themeName}>{option.name}</Text>
+          <Text style={styles.themeSubtitle} numberOfLines={1}>{option.subtitle}</Text>
+        </View>
+        {selected && (
+          <View style={styles.themeSelectedIcon}>
+            <CheckIcon size={12} color={styles.selectedCheck.color} />
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 export function SettingsModal({
   visible,
   hapticsEnabled,
@@ -330,49 +402,68 @@ export function SettingsModal({
   onToggleFullScreenTap,
   onResetStats,
 }: SettingsProps) {
+  const styles = useModalStyles();
+  const { theme, themeId, setThemeId } = useTheme();
+
   return (
     <ModalShell
       visible={visible}
       title="الإعدادات والتفضيلات"
-      subtitle="تخصيص تجربة التسبيح والمزايا اللمسية"
+      subtitle="خصص هدوء التجربة كما تحب"
       onClose={onClose}
     >
-      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-        {/* Haptics Switch */}
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsScroll}>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>المظهر</Text>
+          <Text style={styles.sectionHint}>يتغير فورًا</Text>
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.themeOptionsRow}
+        >
+          {THEME_OPTIONS.map((option) => (
+            <ThemePreviewCard
+              key={option.id}
+              option={option}
+              selected={option.id === themeId}
+              onPress={() => setThemeId(option.id)}
+            />
+          ))}
+        </ScrollView>
+
         <View style={styles.settingItem}>
           <View style={styles.settingItemIconWrap}>
-            <VibrateIcon size={20} color={colors.goldLight} />
+            <VibrateIcon size={20} color={theme.iconAccent} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.settingCopy}>
             <Text style={styles.settingTitle}>الاهتزاز اللمسي</Text>
             <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
           </View>
           <Switch
             value={hapticsEnabled}
             onValueChange={onToggleHaptics}
-            trackColor={{ false: colors.track, true: colors.green }}
-            thumbColor={hapticsEnabled ? colors.goldLight : colors.textMuted}
+            trackColor={{ false: theme.track, true: theme.accent }}
+            thumbColor={hapticsEnabled ? theme.warm : theme.textMuted}
           />
         </View>
 
-        {/* Fullscreen Tap Switch */}
         <View style={styles.settingItem}>
           <View style={styles.settingItemIconWrap}>
-            <FullScreenIcon size={20} color={colors.goldLight} />
+            <FullScreenIcon size={20} color={theme.iconAccent} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.settingCopy}>
             <Text style={styles.settingTitle}>النقر في كامل الشاشة</Text>
             <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
           </View>
           <Switch
             value={fullScreenTap}
             onValueChange={onToggleFullScreenTap}
-            trackColor={{ false: colors.track, true: colors.green }}
-            thumbColor={fullScreenTap ? colors.goldLight : colors.textMuted}
+            trackColor={{ false: theme.track, true: theme.accent }}
+            thumbColor={fullScreenTap ? theme.warm : theme.textMuted}
           />
         </View>
 
-        {/* Stats Card */}
         <View style={styles.statsCard}>
           <Text style={styles.statsLabel}>مجموع التسبيحات الكلي</Text>
           <Text style={styles.statsCount}>{formatArabicNumber(totalSessionCount)}</Text>
@@ -380,6 +471,7 @@ export function SettingsModal({
 
           {totalSessionCount > 0 && (
             <Pressable
+              accessibilityRole="button"
               onPress={onResetStats}
               style={({ pressed }) => [styles.resetStatsButton, pressed && styles.pressed]}
             >
@@ -388,9 +480,8 @@ export function SettingsModal({
           )}
         </View>
 
-        {/* Spiritual Note */}
         <View style={styles.aboutBox}>
-          <BookIcon size={16} color={colors.goldLight} />
+          <BookIcon size={16} color={theme.iconAccent} />
           <Text style={styles.aboutText}>
             تطبيق «ذِكر» صُمم ليكون رفيقًا هادئًا لذكر الله، خاليًا تمامًا من الإعلانات والتتبع. بياناتك محفوظة محليًا على جهازك فقط.
           </Text>
@@ -405,7 +496,7 @@ export function SettingsModal({
 }
 
 /* =========================================================================
-   4. CONFIRMATION MODAL (used for every destructive action)
+   4. CONFIRMATION MODAL
    ========================================================================= */
 
 type ConfirmProps = {
@@ -427,6 +518,8 @@ export function ConfirmModal({
   onClose,
   onConfirm,
 }: ConfirmProps) {
+  const styles = useModalStyles();
+
   return (
     <ModalShell visible={visible} title={title} subtitle={message} onClose={onClose}>
       <View style={styles.actions}>
@@ -448,335 +541,454 @@ export function ConfirmModal({
    STYLES
    ========================================================================= */
 
-const styles = StyleSheet.create({
-  backdrop: {
-    alignItems: 'center',
-    backgroundColor: colors.backdrop,
-    direction: 'rtl',
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  card: {
-    backgroundColor: colors.modalCard,
-    borderColor: colors.modalBorder,
-    borderRadius: 26,
-    borderWidth: 1.2,
-    maxHeight: '88%',
-    maxWidth: 440,
-    padding: 22,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.45,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  sheetHandle: {
-    alignSelf: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.24)',
-    borderRadius: 3,
-    height: 4,
-    marginBottom: 14,
-    width: 38,
-  },
-  modalHeader: {
-    alignItems: 'flex-start',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    color: colors.goldLight,
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    color: colors.textDim,
-    fontSize: 12.5,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  closeButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 18,
-    height: 36,
-    justifyContent: 'center',
-    width: 36,
-  },
-  categoryContainer: {
-    marginBottom: 12,
-  },
-  categoryScroll: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingVertical: 2,
-  },
-  categoryChip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  categoryChipSelected: {
-    backgroundColor: colors.goldBadge,
-    borderColor: colors.goldBadgeBorder,
-  },
-  categoryChipText: {
-    color: colors.textDim,
-    fontSize: 12,
-  },
-  categoryChipTextSelected: {
-    color: colors.goldText,
-    fontWeight: '700',
-  },
-  dhikrList: {
-    maxHeight: 380,
-  },
-  dhikrCard: {
-    backgroundColor: 'rgba(16, 40, 31, 0.65)',
-    borderColor: 'rgba(210, 230, 218, 0.12)',
-    borderRadius: 20,
-    borderWidth: 1.2,
-    marginBottom: 12,
-    padding: 16,
-  },
-  dhikrCardSelected: {
-    backgroundColor: 'rgba(223, 186, 107, 0.12)',
-    borderColor: colors.goldBadgeBorder,
-    shadowColor: colors.goldLight,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  dhikrCardHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  dhikrTitleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  dhikrTitle: {
-    color: colors.textSoft,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  dhikrTitleSelected: {
-    color: colors.goldLight,
-  },
-  dhikrBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  dhikrBadgeText: {
-    color: colors.textDim,
-    fontSize: 10,
-  },
-  selectedCircle: {
-    alignItems: 'center',
-    backgroundColor: colors.goldLight,
-    borderRadius: 12,
-    height: 24,
-    justifyContent: 'center',
-    width: 24,
-  },
-  dhikrPhrase: {
-    color: colors.text,
-    fontSize: 16.5,
-    fontWeight: '600',
-    lineHeight: 26,
-    marginBottom: 8,
-  },
-  virtueBox: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 12,
-    flexDirection: 'row',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  virtueText: {
-    color: colors.textDim,
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  quickPresetsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  presetChip: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 14,
-    borderWidth: 1,
-    flex: 1,
-    minWidth: '28%',
-    paddingVertical: 10,
-  },
-  presetChipSelected: {
-    backgroundColor: colors.goldBadge,
-    borderColor: colors.goldBadgeBorder,
-  },
-  presetChipText: {
-    color: colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  presetChipTextSelected: {
-    color: colors.goldText,
-    fontWeight: '700',
-  },
-  inputSectionLabel: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    borderWidth: 1.2,
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '700',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  inputError: {
-    borderColor: colors.danger,
-  },
-  errorText: {
-    color: colors.danger,
-    fontSize: 11.5,
-    marginTop: 6,
-  },
-  settingItem: {
-    alignItems: 'center',
-    borderBottomColor: 'rgba(210, 230, 218, 0.08)',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    gap: 12,
-    paddingVertical: 14,
-  },
-  settingItemIconWrap: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(223, 186, 107, 0.1)',
-    borderRadius: 12,
-    height: 38,
-    justifyContent: 'center',
-    width: 38,
-  },
-  settingTitle: {
-    color: colors.text,
-    fontSize: 14.5,
-    fontWeight: '600',
-  },
-  settingDesc: {
-    color: colors.textDim,
-    fontSize: 11.5,
-    marginTop: 2,
-  },
-  statsCard: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderColor: 'rgba(223, 186, 107, 0.2)',
-    borderRadius: 18,
-    borderWidth: 1,
-    marginVertical: 16,
-    padding: 16,
-  },
-  statsLabel: {
-    color: colors.textDim,
-    fontSize: 12,
-  },
-  statsCount: {
-    color: colors.goldLight,
-    fontSize: 32,
-    fontWeight: '800',
-    marginVertical: 4,
-  },
-  statsSubtext: {
-    color: colors.textMuted,
-    fontSize: 11,
-  },
-  resetStatsButton: {
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  resetStatsText: {
-    color: colors.danger,
-    fontSize: 11,
-  },
-  aboutBox: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.25)',
-    borderRadius: 14,
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
-    padding: 12,
-  },
-  aboutText: {
-    color: colors.textDim,
-    flex: 1,
-    fontSize: 11,
-    lineHeight: 16,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
-  },
-  actionButton: {
-    alignItems: 'center',
-    borderRadius: 14,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  primaryButton: {
-    backgroundColor: colors.gold,
-  },
-  secondaryButton: {
-    borderColor: colors.surfaceBorder,
-    borderWidth: 1,
-  },
-  dangerButton: {
-    backgroundColor: colors.dangerBg,
-    borderColor: colors.dangerBorder,
-    borderWidth: 1,
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  primaryText: {
-    color: colors.onGold,
-  },
-  secondaryText: {
-    color: colors.textMuted,
-  },
-  dangerText: {
-    color: colors.danger,
-  },
-  pressed: {
-    opacity: 0.72,
-  },
-});
+function createStyles(theme: ThemeTokens) {
+  return StyleSheet.create({
+    backdrop: {
+      alignItems: 'center',
+      backgroundColor: theme.backdrop,
+      direction: 'rtl',
+      flex: 1,
+      justifyContent: 'center',
+      padding: 18,
+    },
+    card: {
+      backgroundColor: theme.modalCard,
+      borderColor: theme.modalBorder,
+      borderRadius: 26,
+      borderWidth: 1.2,
+      maxHeight: '90%',
+      maxWidth: 440,
+      padding: 20,
+      width: '100%',
+      shadowColor: theme.background,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.45,
+      shadowRadius: 24,
+      elevation: 10,
+    },
+    sheetHandle: {
+      alignSelf: 'center',
+      backgroundColor: theme.surfaceBorder,
+      borderRadius: 3,
+      height: 4,
+      marginBottom: 14,
+      width: 38,
+    },
+    modalHeader: {
+      alignItems: 'flex-start',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 16,
+    },
+    modalHeaderCopy: {
+      flex: 1,
+      paddingRight: 12,
+    },
+    title: {
+      color: theme.text,
+      fontSize: 22,
+      fontWeight: '800',
+      letterSpacing: -0.3,
+    },
+    subtitle: {
+      color: theme.textDim,
+      fontSize: 12.5,
+      lineHeight: 18,
+      marginTop: 4,
+    },
+    closeButton: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 18,
+      borderWidth: 1,
+      height: 36,
+      justifyContent: 'center',
+      width: 36,
+    },
+    closeIcon: { color: theme.textMuted },
+    categoryContainer: {
+      marginBottom: 12,
+    },
+    categoryScroll: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingVertical: 2,
+    },
+    categoryChip: {
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 16,
+      borderWidth: 1,
+      paddingHorizontal: 14,
+      paddingVertical: 7,
+    },
+    categoryChipSelected: {
+      backgroundColor: theme.warmSurface,
+      borderColor: theme.warmBorder,
+    },
+    categoryChipText: {
+      color: theme.textDim,
+      fontSize: 12,
+    },
+    categoryChipTextSelected: {
+      color: theme.warm,
+      fontWeight: '700',
+    },
+    dhikrList: {
+      maxHeight: 390,
+    },
+    dhikrCard: {
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 20,
+      borderWidth: 1.2,
+      marginBottom: 12,
+      padding: 16,
+    },
+    dhikrCardSelected: {
+      backgroundColor: theme.warmSurface,
+      borderColor: theme.warmBorder,
+    },
+    dhikrCardHeader: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    dhikrTitleRow: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 8,
+    },
+    dhikrTitle: {
+      color: theme.textSoft,
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    dhikrTitleSelected: {
+      color: theme.warm,
+    },
+    dhikrBadge: {
+      backgroundColor: theme.surfaceElevated,
+      borderRadius: 10,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    dhikrBadgeText: {
+      color: theme.textDim,
+      fontSize: 10,
+    },
+    selectedCircle: {
+      alignItems: 'center',
+      backgroundColor: theme.warm,
+      borderRadius: 12,
+      height: 24,
+      justifyContent: 'center',
+      width: 24,
+    },
+    selectedCheck: { color: theme.onWarm },
+    warmIcon: { color: theme.warm },
+    dhikrPhrase: {
+      color: theme.text,
+      fontSize: 16.5,
+      fontWeight: '600',
+      lineHeight: 26,
+      marginBottom: 8,
+    },
+    virtueBox: {
+      alignItems: 'center',
+      backgroundColor: theme.background,
+      borderRadius: 12,
+      flexDirection: 'row',
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    virtueText: {
+      color: theme.textDim,
+      flex: 1,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+    quickPresetsRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginBottom: 16,
+    },
+    presetChip: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 14,
+      borderWidth: 1,
+      flex: 1,
+      minWidth: '28%',
+      paddingVertical: 10,
+    },
+    presetChipSelected: {
+      backgroundColor: theme.warmSurface,
+      borderColor: theme.warmBorder,
+    },
+    presetChipText: {
+      color: theme.textMuted,
+      fontSize: 14,
+      fontWeight: '600',
+    },
+    presetChipTextSelected: {
+      color: theme.warm,
+      fontWeight: '700',
+    },
+    inputSectionLabel: {
+      color: theme.textDim,
+      fontSize: 12,
+      marginBottom: 8,
+    },
+    input: {
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 16,
+      borderWidth: 1.2,
+      color: theme.text,
+      fontSize: 24,
+      fontWeight: '700',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    inputPlaceholder: { color: theme.textFaint },
+    inputError: {
+      borderColor: theme.danger,
+    },
+    errorText: {
+      color: theme.danger,
+      fontSize: 11.5,
+      marginTop: 6,
+    },
+    settingsScroll: {
+      maxHeight: 510,
+    },
+    sectionHeaderRow: {
+      alignItems: 'baseline',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      color: theme.text,
+      fontSize: 15,
+      fontWeight: '800',
+    },
+    sectionHint: {
+      color: theme.textDim,
+      fontSize: 11,
+    },
+    themeOptionsRow: {
+      gap: 10,
+      paddingBottom: 16,
+    },
+    themeCard: {
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.surfaceBorder,
+      borderRadius: 18,
+      borderWidth: 1,
+      overflow: 'hidden',
+      width: 134,
+    },
+    themeCardSelected: {
+      borderColor: theme.warm,
+      borderWidth: 1.5,
+    },
+    themePreview: {
+      alignItems: 'center',
+      height: 108,
+      justifyContent: 'center',
+      padding: 8,
+    },
+    previewHalo: {
+      alignItems: 'center',
+      borderRadius: 48,
+      borderWidth: 1,
+      height: 94,
+      justifyContent: 'center',
+      position: 'relative',
+      width: 94,
+    },
+    previewProgress: {
+      borderRadius: 48,
+      borderRightWidth: 3,
+      borderTopWidth: 3,
+      height: 78,
+      position: 'absolute',
+      transform: [{ rotate: '28deg' }],
+      width: 78,
+    },
+    previewCore: {
+      alignItems: 'center',
+      borderRadius: 31,
+      height: 62,
+      justifyContent: 'center',
+      width: 62,
+    },
+    previewCount: {
+      fontSize: 18,
+      fontWeight: '800',
+      lineHeight: 21,
+    },
+    previewFraction: {
+      fontSize: 8,
+      marginTop: 2,
+    },
+    previewDot: {
+      borderRadius: 3,
+      height: 6,
+      position: 'absolute',
+      width: 6,
+    },
+    themeCardFooter: {
+      alignItems: 'center',
+      flexDirection: 'row',
+      gap: 6,
+      minHeight: 45,
+      paddingHorizontal: 8,
+      paddingVertical: 7,
+    },
+    themeCardCopy: {
+      flex: 1,
+    },
+    themeName: {
+      color: theme.text,
+      fontSize: 11,
+      fontWeight: '800',
+    },
+    themeSubtitle: {
+      color: theme.textDim,
+      fontSize: 8.5,
+      marginTop: 2,
+    },
+    themeSelectedIcon: {
+      alignItems: 'center',
+      backgroundColor: theme.warm,
+      borderRadius: 10,
+      height: 20,
+      justifyContent: 'center',
+      width: 20,
+    },
+    settingItem: {
+      alignItems: 'center',
+      borderBottomColor: theme.surfaceBorder,
+      borderBottomWidth: 1,
+      flexDirection: 'row',
+      gap: 12,
+      paddingVertical: 14,
+    },
+    settingItemIconWrap: {
+      alignItems: 'center',
+      backgroundColor: theme.warmSurface,
+      borderRadius: 12,
+      height: 38,
+      justifyContent: 'center',
+      width: 38,
+    },
+    settingCopy: {
+      flex: 1,
+    },
+    settingTitle: {
+      color: theme.text,
+      fontSize: 14.5,
+      fontWeight: '600',
+    },
+    settingDesc: {
+      color: theme.textDim,
+      fontSize: 11.5,
+      marginTop: 2,
+    },
+    statsCard: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderColor: theme.warmBorder,
+      borderRadius: 18,
+      borderWidth: 1,
+      marginVertical: 16,
+      padding: 16,
+    },
+    statsLabel: {
+      color: theme.textDim,
+      fontSize: 12,
+    },
+    statsCount: {
+      color: theme.warm,
+      fontSize: 32,
+      fontWeight: '800',
+      marginVertical: 4,
+    },
+    statsSubtext: {
+      color: theme.textMuted,
+      fontSize: 11,
+    },
+    resetStatsButton: {
+      marginTop: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+    },
+    resetStatsText: {
+      color: theme.danger,
+      fontSize: 11,
+    },
+    aboutBox: {
+      alignItems: 'center',
+      backgroundColor: theme.surfaceSoft,
+      borderRadius: 14,
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 4,
+      padding: 12,
+    },
+    aboutText: {
+      color: theme.textDim,
+      flex: 1,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: 10,
+      marginTop: 18,
+    },
+    actionButton: {
+      alignItems: 'center',
+      borderRadius: 14,
+      flex: 1,
+      justifyContent: 'center',
+      minHeight: 48,
+    },
+    primaryButton: {
+      backgroundColor: theme.warm,
+    },
+    secondaryButton: {
+      borderColor: theme.surfaceBorder,
+      borderWidth: 1,
+    },
+    dangerButton: {
+      backgroundColor: theme.dangerBg,
+      borderColor: theme.dangerBorder,
+      borderWidth: 1,
+    },
+    actionButtonText: {
+      fontSize: 14,
+      fontWeight: '700',
+    },
+    primaryText: {
+      color: theme.onWarm,
+    },
+    secondaryText: {
+      color: theme.textMuted,
+    },
+    dangerText: {
+      color: theme.danger,
+    },
+    pressed: {
+      opacity: 0.72,
+    },
+  });
+}
