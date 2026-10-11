@@ -111,7 +111,7 @@ For non-native Arabic speakers, here is a guide to the authentic remembrances in
 | **React Native SVG** | `15.15.4` | Sacred geometric art, 33-bead tasbeeh track, and icons |
 | **Expo Linear Gradient** | `~57.0` | Rich celestial emerald and gold gradients |
 | **Expo Haptics** | `~57.0` | Tactile sensory feedback engine |
-| **AsyncStorage** | `2.2.0` | Encrypted/local offline persistence |
+| **AsyncStorage** | `2.2.0` | Unencrypted local offline persistence |
 
 ---
 

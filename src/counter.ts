@@ -12,7 +12,8 @@ export type DhikrOption = {
 };
 
 // Each virtue is a close paraphrase of a well-known hadith, with its source in parentheses.
-// Phrase and default target follow the wording and count in that hadith.
+// Phrases follow the wording in the cited hadiths; default targets either reflect counts
+// explicitly mentioned in the hadith (e.g. 100 or 1) or serve as suggested sunnah defaults (e.g. 33).
 export const DHIKR_OPTIONS: DhikrOption[] = [
   {
     id: 'tasbih_tahmid',

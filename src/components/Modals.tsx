@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -221,15 +221,15 @@ type CustomTargetProps = {
 const TARGET_PRESETS = [33, 99, 100, 300, 500, 1000];
 
 export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: CustomTargetProps) {
-  const [text, setText] = useState('');
+  const [prevTarget, setPrevTarget] = useState(currentTarget);
+  const [text, setText] = useState(() => toArabicDigits(currentTarget));
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      setText(toArabicDigits(currentTarget));
-      setError(null);
-    }
-  }, [visible, currentTarget]);
+  if (currentTarget !== prevTarget) {
+    setPrevTarget(currentTarget);
+    setText(toArabicDigits(currentTarget));
+    setError(null);
+  }
 
   const handleSave = (targetValue?: number) => {
     const rawVal = targetValue !== undefined ? targetValue : Number(normalizeDigits(text).trim());

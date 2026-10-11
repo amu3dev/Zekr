@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, G, LinearGradient, RadialGradient, Stop } from 'react-native-svg';
 
@@ -30,24 +30,32 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
   const headX = CENTER + RADIUS * Math.sin(angle);
   const headY = CENTER - RADIUS * Math.cos(angle);
 
-  // Animations
-  const pressScale = useRef(new Animated.Value(1)).current;
-  const countPop = useRef(new Animated.Value(1)).current;
-  const rippleAnim = useRef(new Animated.Value(0)).current;
-  const completePulse = useRef(new Animated.Value(1)).current;
+  // Stable Animated Values
+  const [pressScale] = useState(() => new Animated.Value(1));
+  const [countPop] = useState(() => new Animated.Value(1));
+  const [rippleAnim] = useState(() => new Animated.Value(0));
+  const [completePulse] = useState(() => new Animated.Value(1));
 
   // Pulse when target is reached
   useEffect(() => {
-    if (isComplete) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(completePulse, { toValue: 1.05, duration: 900, useNativeDriver: true }),
-          Animated.timing(completePulse, { toValue: 1, duration: 900, useNativeDriver: true }),
-        ]),
-      ).start();
-    } else {
+    if (!isComplete) {
       completePulse.setValue(1);
+      return;
     }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(completePulse, { toValue: 1.05, duration: 900, useNativeDriver: true }),
+        Animated.timing(completePulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => {
+      animation.stop();
+      completePulse.setValue(1);
+    };
   }, [isComplete, completePulse]);
 
   const handlePressIn = () => {

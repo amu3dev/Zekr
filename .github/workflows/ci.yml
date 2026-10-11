@@ -27,5 +27,8 @@ jobs:
       - name: TypeScript Check
         run: npx tsc --noEmit
 
+      - name: ESLint Check
+        run: npx expo lint
+
       - name: Expo Doctor Check
         run: npx expo-doctor

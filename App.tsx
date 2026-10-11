@@ -1,8 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useReducer, useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import {
+  AppState,
   Platform,
   Pressable,
   ScrollView,
@@ -65,6 +66,9 @@ function CounterScreen() {
   // Dhikr waiting for confirmation because switching would clear the current count.
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   useEffect(() => {
     loadCounterState().then((saved) => {
       if (saved) dispatch({ type: 'restore', state: saved });
@@ -72,9 +76,24 @@ function CounterScreen() {
     });
   }, []);
 
+  // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps
   useEffect(() => {
-    if (isLoaded) saveCounterState(state);
+    if (!isLoaded) return;
+    const timer = setTimeout(() => {
+      saveCounterState(state);
+    }, 400);
+    return () => clearTimeout(timer);
   }, [isLoaded, state]);
+
+  // Flush latest state immediately when app goes to background or becomes inactive
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState.match(/inactive|background/) && isLoaded) {
+        saveCounterState(stateRef.current);
+      }
+    });
+    return () => subscription.remove();
+  }, [isLoaded]);
 
   const dhikr = getDhikr(state.dhikrId);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
@@ -186,13 +205,8 @@ function CounterScreen() {
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
           >
-            {/* In free-tap mode, taps on empty space count; buttons inside still handle their own taps. */}
-            <Pressable
-              accessible={false}
-              disabled={!state.fullScreenTap}
-              onPress={handleIncrement}
-              style={styles.scrollContent}
-            >
+            {/* Main Content Container */}
+            <View style={styles.scrollContent}>
               {/* 1. Dhikr Showcase Card (Clickable to open library) */}
               <Pressable
                 accessibilityRole="button"
@@ -420,7 +434,7 @@ function CounterScreen() {
               </View>
 
               <Text style={styles.privacyNote}>بياناتك محفوظة على جهازك فقط</Text>
-            </Pressable>
+            </View>
           </ScrollView>
         </View>
       )}
