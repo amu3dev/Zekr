@@ -7,11 +7,10 @@ type Props = {
   opacity?: number;
 };
 
-export function IslamicGeometryBackground({ size, opacity = 0.08 }: Props) {
+export function IslamicGeometryBackground({ size, opacity = 0.85 }: Props) {
   const center = size / 2;
-  const radius = size * 0.45;
-  const starRadiusOuter = size * 0.38;
-  const starRadiusInner = size * 0.27;
+  const starRadiusOuter = size * 0.46;
+  const starRadiusInner = size * 0.325;
 
   // Generate 8-point geometric star vertices
   const points: string[] = [];
@@ -24,87 +23,90 @@ export function IslamicGeometryBackground({ size, opacity = 0.08 }: Props) {
   }
   const starPath = `M ${points.join(' L ')} Z`;
 
+  // Inner star for double border effect
+  const innerStarRadiusOuter = starRadiusOuter * 0.94;
+  const innerStarRadiusInner = starRadiusInner * 0.94;
+  const innerPoints: string[] = [];
+  for (let i = 0; i < 16; i++) {
+    const angle = (i * Math.PI) / 8 - Math.PI / 2;
+    const r = i % 2 === 0 ? innerStarRadiusOuter : innerStarRadiusInner;
+    const x = center + r * Math.cos(angle);
+    const y = center + r * Math.sin(angle);
+    innerPoints.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+  }
+  const innerStarPath = `M ${innerPoints.join(' L ')} Z`;
+
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
       <Defs>
-        <RadialGradient id="ambientGoldGlow" cx="50%" cy="50%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor={colors.goldLight} stopOpacity="0.22" />
-          <Stop offset="45%" stopColor={colors.gold} stopOpacity="0.08" />
-          <Stop offset="100%" stopColor="#050D0A" stopOpacity="0" />
+        <RadialGradient id="starRadialGlow" cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor="#1C4B3A" stopOpacity="0.45" />
+          <Stop offset="60%" stopColor="#0D261C" stopOpacity="0.2" />
+          <Stop offset="100%" stopColor="#040C08" stopOpacity="0" />
         </RadialGradient>
-        <RadialGradient id="emeraldCenterGlow" cx="50%" cy="50%" rx="50%" ry="50%">
-          <Stop offset="0%" stopColor="#2F855A" stopOpacity="0.3" />
-          <Stop offset="60%" stopColor="#0E2E23" stopOpacity="0.08" />
-          <Stop offset="100%" stopColor="#050D0A" stopOpacity="0" />
+        <RadialGradient id="goldMedallionAura" cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0%" stopColor={colors.goldLight} stopOpacity="0.18" />
+          <Stop offset="50%" stopColor={colors.gold} stopOpacity="0.06" />
+          <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
         </RadialGradient>
       </Defs>
 
-      {/* Ambient background glows */}
-      <Circle cx={center} cy={center} r={radius * 1.15} fill="url(#emeraldCenterGlow)" />
-      <Circle cx={center} cy={center} r={radius * 0.85} fill="url(#ambientGoldGlow)" />
+      {/* Atmospheric center glows */}
+      <Circle cx={center} cy={center} r={starRadiusOuter * 1.08} fill="url(#starRadialGlow)" />
+      <Circle cx={center} cy={center} r={starRadiusInner * 1.2} fill="url(#goldMedallionAura)" />
 
       <G opacity={opacity}>
-        {/* Outer decorative halo */}
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={colors.goldLight}
-          strokeWidth={1}
-          strokeDasharray="3 7"
-          fill="none"
-        />
-
-        {/* Mid framing circle */}
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius * 0.9}
-          stroke={colors.gold}
-          strokeWidth={0.8}
-          fill="none"
-        />
-
-        {/* 8-pointed Islamic Star */}
+        {/* Main 8-Point Star with architectural emerald backdrop fill */}
         <Path
           d={starPath}
-          stroke={colors.goldLight}
-          strokeWidth={1.2}
-          fill={colors.gold}
-          fillOpacity={0.03}
+          fill={colors.starFill}
+          stroke={colors.starBorder}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+        />
+
+        {/* Second inner framing star */}
+        <Path
+          d={innerStarPath}
+          fill="none"
+          stroke={colors.starInnerBorder}
+          strokeWidth={0.9}
+          strokeLinejoin="round"
         />
 
         {/* Interlocking rotated square 1 */}
         <Rect
-          x={center - starRadiusInner * 0.85}
-          y={center - starRadiusInner * 0.85}
-          width={starRadiusInner * 1.7}
-          height={starRadiusInner * 1.7}
-          stroke={colors.gold}
-          strokeWidth={0.7}
+          x={center - starRadiusInner * 0.9}
+          y={center - starRadiusInner * 0.9}
+          width={starRadiusInner * 1.8}
+          height={starRadiusInner * 1.8}
+          stroke={colors.starBorder}
+          strokeWidth={0.8}
           fill="none"
+          opacity={0.4}
         />
 
         {/* Interlocking rotated square 2 (45 degrees) */}
         <Rect
-          x={center - starRadiusInner * 0.85}
-          y={center - starRadiusInner * 0.85}
-          width={starRadiusInner * 1.7}
-          height={starRadiusInner * 1.7}
-          stroke={colors.gold}
-          strokeWidth={0.7}
+          x={center - starRadiusInner * 0.9}
+          y={center - starRadiusInner * 0.9}
+          width={starRadiusInner * 1.8}
+          height={starRadiusInner * 1.8}
+          stroke={colors.starBorder}
+          strokeWidth={0.8}
           fill="none"
           transform={`rotate(45 ${center} ${center})`}
+          opacity={0.4}
         />
 
-        {/* Core delicate inner medallion */}
+        {/* Decorative corner rays & star points flourishes */}
         <Circle
           cx={center}
           cy={center}
-          r={starRadiusInner * 0.5}
-          stroke={colors.goldLight}
-          strokeWidth={0.9}
-          strokeDasharray="2 4"
+          r={starRadiusOuter * 0.72}
+          stroke={colors.starInnerBorder}
+          strokeWidth={0.7}
+          strokeDasharray="3 5"
           fill="none"
         />
       </G>

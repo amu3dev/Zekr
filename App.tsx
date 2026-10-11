@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
   AppState,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,19 +14,20 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { formatArabicNumber, toArabicDigits } from './src/arabic';
+import { formatArabicNumber, getCycleText, toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
 import {
   BookIcon,
   ChevronDownIcon,
   CloseIcon,
   FullScreenIcon,
+  MenuIcon,
   NextCycleIcon,
   ResetIcon,
+  RosetteClasp,
   SettingsIcon,
   SparkleIcon,
   UndoIcon,
-  VibrateIcon,
 } from './src/components/Icons';
 import { IslamicGeometryBackground } from './src/components/IslamicGeometry';
 import {
@@ -44,7 +46,7 @@ import {
 import { loadCounterState, saveCounterState } from './src/storage';
 import { colors } from './src/theme';
 
-type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | 'resetAllConfirm' | null;
+type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | null;
 
 function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
   if (!enabled) return;
@@ -63,7 +65,6 @@ function CounterScreen() {
   const [state, dispatch] = useReducer(counterReducer, initialCounterState);
   const [isLoaded, setIsLoaded] = useState(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
-  // Dhikr waiting for confirmation because switching would clear the current count.
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
   const stateRef = useRef(state);
@@ -117,18 +118,29 @@ function CounterScreen() {
     }
   };
 
+  const handleNextCycle = () => {
+    dispatch({ type: 'nextCycle' });
+    playHaptic('success', state.hapticsEnabled);
+  };
+
   const handleSelectDhikr = (option: DhikrOption) => {
     if (option.id === state.dhikrId) return;
     if (state.count > 0) {
       setPendingDhikr(option);
+      setOpenModal('resetConfirm');
     } else {
       dispatch({ type: 'setDhikr', dhikrId: option.id });
     }
   };
 
-  const handleNextCycle = () => {
-    dispatch({ type: 'nextCycle' });
-    playHaptic('success', state.hapticsEnabled);
+  const handleConfirmReset = () => {
+    if (pendingDhikr) {
+      dispatch({ type: 'setDhikr', dhikrId: pendingDhikr.id });
+      setPendingDhikr(null);
+    } else {
+      dispatch({ type: 'reset' });
+    }
+    setOpenModal(null);
   };
 
   const handleExitFullScreenTap = () => {
@@ -146,65 +158,34 @@ function CounterScreen() {
     >
       <StatusBar style="light" />
 
-      {/* Screen Container */}
       {isLoaded && (
         <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-          {/* Top Bar Navigation */}
-          <View
-            accessibilityElementsHidden={state.fullScreenTap}
-            importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
-            style={styles.topBar}
-          >
+          {/* Top Bar Header (Matching Mockup: Menu Icon, Glowing Title, Dual-Line Pill) */}
+          <View style={styles.topBar}>
+            {/* Left Frosted Menu Button */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="القائمة والإعدادات"
+              hitSlop={8}
+              onPress={() => setOpenModal('settings')}
+              style={({ pressed }) => [styles.menuButton, pressed && styles.pressed]}
+            >
+              <MenuIcon size={19} color={colors.goldLight} />
+            </Pressable>
+
+            {/* Center Majestic Title */}
             <View style={styles.titleSection}>
-              <View style={styles.titleRow}>
-                <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
-                <SparkleIcon size={16} color={colors.goldLight} />
-              </View>
-              <Text style={styles.appSubtitle}>رفيق التسبيح والسكينة</Text>
+              <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
             </View>
 
-            <View style={styles.topActions}>
-              {/* Total Session Pill */}
-              <View style={styles.totalPill}>
-                <Text style={styles.totalPillLabel}>الإجمالي:</Text>
-                <Text style={styles.totalPillNumber}>
-                  {formatArabicNumber(state.totalSessionCount)}
-                </Text>
-              </View>
-
-              {/* Quick Haptics Toggle */}
-              <Pressable
-                accessibilityRole="switch"
-                accessibilityLabel="الاهتزاز"
-                accessibilityState={{ checked: state.hapticsEnabled }}
-                hitSlop={8}
-                onPress={() => {
-                  const nextHaptics = !state.hapticsEnabled;
-                  dispatch({ type: 'setHaptics', enabled: nextHaptics });
-                  playHaptic('tap', nextHaptics);
-                }}
-                style={({ pressed }) => [
-                  styles.iconButton,
-                  state.hapticsEnabled && styles.iconButtonActive,
-                  pressed && styles.pressed,
-                ]}
-              >
-                <VibrateIcon
-                  size={19}
-                  color={state.hapticsEnabled ? colors.goldLight : colors.textDim}
-                />
-              </Pressable>
-
-              {/* Settings Button */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="الإعدادات"
-                hitSlop={8}
-                onPress={() => setOpenModal('settings')}
-                style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
-              >
-                <SettingsIcon size={19} color={colors.icon} />
-              </Pressable>
+            {/* Right Dual-Line Session & Total Pill */}
+            <View style={styles.sessionPill}>
+              <Text style={styles.sessionPillTop}>
+                {getCycleText(state.cycle)}
+              </Text>
+              <Text style={styles.sessionPillBottom}>
+                التعداد: {formatArabicNumber(state.totalSessionCount)}
+              </Text>
             </View>
           </View>
 
@@ -216,22 +197,26 @@ function CounterScreen() {
             importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
             showsVerticalScrollIndicator={false}
           >
-            {/* Main Content Container */}
             <View style={styles.scrollContent}>
-              {/* 1. Dhikr Showcase Card (Clickable to open library) */}
+              {/* 1. Dhikr Showcase Card with Centered Rosette Clasp */}
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
                 onPress={() => setOpenModal('dhikrPicker')}
                 style={({ pressed }) => [styles.dhikrCard, pressed && styles.pressed]}
               >
+                {/* Decorative Rosette Clasp Medallion at the top border */}
+                <View style={styles.rosetteWrapper} pointerEvents="none">
+                  <RosetteClasp size={30} />
+                </View>
+
                 <View style={styles.dhikrCardTop}>
                   <View style={styles.dhikrCategoryBadge}>
                     <Text style={styles.dhikrCategoryText}>{dhikr.category}</Text>
                   </View>
                   <View style={styles.changeDhikrHint}>
                     <Text style={styles.changeDhikrText}>تغيير الذكر</Text>
-                    <ChevronDownIcon size={14} color={colors.goldLight} />
+                    <ChevronDownIcon size={13} color={colors.goldLight} />
                   </View>
                 </View>
 
@@ -249,14 +234,14 @@ function CounterScreen() {
                 ) : null}
               </Pressable>
 
-              {/* 2. Interactive Central Ring & Sacred Geometry */}
+              {/* 2. Interactive Central Ring & Sacred Islamic Geometry */}
               <View style={styles.ringSection}>
-                {/* Islamic Ambient Geometry in Background */}
+                {/* Architectural 8-Point Star Geometry in Background */}
                 <View pointerEvents="none" style={styles.geometryWrapper}>
-                  <IslamicGeometryBackground size={geometrySize} opacity={0.11} />
+                  <IslamicGeometryBackground size={geometrySize} opacity={0.9} />
                 </View>
 
-                {/* Primary Interactive Ring */}
+                {/* 33-Bead Spherical Tasbeeh Ring */}
                 <CounterRing
                   size={ringSize}
                   count={state.count}
@@ -281,18 +266,17 @@ function CounterScreen() {
                     style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
                   >
                     <Text style={styles.nextCycleText}>ابدأ الدورة التالية</Text>
-                    <NextCycleIcon size={16} color={colors.onGold} />
+                    <NextCycleIcon size={15} color={colors.onGold} />
                   </Pressable>
                 </View>
               ) : null}
 
-              {/* 4. Target Selector Chips */}
+              {/* 4. Target Selector Chips (Matching Mockup Pill Buttons) */}
               <View
                 style={styles.targetSection}
                 accessibilityRole="radiogroup"
                 accessibilityLabel="الهدف"
               >
-                <Text style={styles.targetHeaderLabel}>الهدف المطلوب:</Text>
                 <View style={styles.targetRow}>
                   {PRESET_TARGETS.map((target) => {
                     const isSelected = state.target === target;
@@ -346,101 +330,90 @@ function CounterScreen() {
                         !isPresetTarget && styles.targetChipTextSelected,
                       ]}
                     >
-                      {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص +'}
+                      {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص'}
                     </Text>
                   </Pressable>
                 </View>
               </View>
 
-              {/* 5. Floating Bottom Control Dock */}
+              {/* 5. Floating Glassmorphic Dock (Matching Mockup: 5 Balanced Actions) */}
               <View style={styles.bottomDock}>
-                {/* Reset Button */}
+                {/* 1. Undo Button */}
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="إعادة ضبط العداد"
-                  accessibilityState={{ disabled: !canUndo }}
-                  disabled={!canUndo}
-                  onPress={() => setOpenModal('resetConfirm')}
-                  style={({ pressed }) => [
-                    styles.dockButton,
-                    !canUndo && styles.disabled,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <View style={styles.dockIconCircle}>
-                    <ResetIcon size={18} color={canUndo ? colors.text : colors.textDim} />
-                  </View>
-                  <Text style={styles.dockLabel}>بدء جديد</Text>
-                </Pressable>
-
-                {/* FullScreen Tap Mode Toggle */}
-                <Pressable
-                  accessibilityRole="switch"
-                  accessibilityLabel="النقر في كامل الشاشة"
-                  accessibilityState={{ checked: state.fullScreenTap }}
-                  onPress={() => {
-                    const nextVal = !state.fullScreenTap;
-                    dispatch({ type: 'setFullScreenTap', enabled: nextVal });
-                    playHaptic('tap', state.hapticsEnabled);
-                  }}
-                  style={({ pressed }) => [
-                    styles.dockButton,
-                    styles.dockButtonSpecial,
-                    state.fullScreenTap && styles.dockButtonActive,
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.dockIconCircle,
-                      state.fullScreenTap && styles.dockIconCircleActive,
-                    ]}
-                  >
-                    <FullScreenIcon
-                      size={19}
-                      color={state.fullScreenTap ? colors.goldLight : colors.text}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.dockLabel,
-                      state.fullScreenTap && styles.dockLabelActive,
-                    ]}
-                  >
-                    {state.fullScreenTap ? 'نقر حر مفعل' : 'ملء الشاشة'}
-                  </Text>
-                </Pressable>
-
-                {/* Dhikr Library Shortcut */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="مكتبة الأذكار"
-                  onPress={() => setOpenModal('dhikrPicker')}
-                  style={({ pressed }) => [styles.dockButton, pressed && styles.pressed]}
-                >
-                  <View style={styles.dockIconCircle}>
-                    <BookIcon size={18} color={colors.text} />
-                  </View>
-                  <Text style={styles.dockLabel}>الأذكار</Text>
-                </Pressable>
-
-                {/* Undo Button */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="تراجع عن العدة الأخيرة"
+                  accessibilityLabel="تراجع"
                   accessibilityState={{ disabled: !canUndo }}
                   disabled={!canUndo}
                   onPress={handleUndo}
                   style={({ pressed }) => [
-                    styles.dockButton,
+                    styles.dockItem,
                     !canUndo && styles.disabled,
                     pressed && styles.pressed,
                   ]}
                 >
-                  <View style={styles.dockIconCircle}>
-                    <UndoIcon size={18} color={canUndo ? colors.text : colors.textDim} />
-                  </View>
-                  <Text style={styles.dockLabel}>تراجع</Text>
+                  <UndoIcon size={19} color={canUndo ? colors.iconGold : colors.textDim} />
+                  <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>تراجع</Text>
+                </Pressable>
+
+                <View style={styles.dockDivider} />
+
+                {/* 2. Reset Button */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="إعادة تعيين"
+                  accessibilityState={{ disabled: !canUndo }}
+                  disabled={!canUndo}
+                  onPress={() => setOpenModal('resetConfirm')}
+                  style={({ pressed }) => [
+                    styles.dockItem,
+                    !canUndo && styles.disabled,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <ResetIcon size={19} color={canUndo ? colors.iconGold : colors.textDim} />
+                  <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>إعادة تعيين</Text>
+                </Pressable>
+
+                <View style={styles.dockDivider} />
+
+                {/* 3. Dhikr Library Shortcut */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="مكتبة الأذكار"
+                  onPress={() => setOpenModal('dhikrPicker')}
+                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
+                >
+                  <BookIcon size={19} color={colors.iconGold} />
+                  <Text style={styles.dockItemLabel}>الأذكار</Text>
+                </Pressable>
+
+                <View style={styles.dockDivider} />
+
+                {/* 4. FullScreen Free Tap Toggle */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="النقر الحر"
+                  onPress={() => {
+                    dispatch({ type: 'setFullScreenTap', enabled: true });
+                    playHaptic('tap', state.hapticsEnabled);
+                  }}
+                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
+                >
+                  <FullScreenIcon size={19} color={colors.iconGold} />
+                  <Text style={styles.dockItemLabel}>النقر الحر</Text>
+                </Pressable>
+
+                <View style={styles.dockDivider} />
+
+                {/* 5. Settings */}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="الإعدادات"
+                  onPress={() => setOpenModal('settings')}
+                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
+                >
+                  <SettingsIcon size={19} color={colors.iconGold} />
+                  <Text style={styles.dockItemLabel}>الإعدادات</Text>
                 </Pressable>
               </View>
 
@@ -448,8 +421,9 @@ function CounterScreen() {
             </View>
           </ScrollView>
 
+          {/* Full Screen Free Tap Mode HUD Overlay (Matching Mockup screen-freetap.png) */}
           {state.fullScreenTap ? (
-            <View accessibilityViewIsModal style={styles.freeTapOverlay}>
+            <View style={styles.freeTapOverlay}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`النقر الحر لعدّاد ${dhikr.title}`}
@@ -481,11 +455,11 @@ function CounterScreen() {
                   onPress={handleExitFullScreenTap}
                   style={({ pressed }) => [
                     styles.freeTapExitButton,
-                    { bottom: insets.bottom + 18 },
+                    { bottom: insets.bottom + 22 },
                     pressed && styles.pressed,
                   ]}
                 >
-                  <CloseIcon size={16} color={colors.text} />
+                  <CloseIcon size={15} color={colors.goldLight} />
                   <Text style={styles.freeTapExitText}>إنهاء الوضع</Text>
                 </Pressable>
               </View>
@@ -520,37 +494,23 @@ function CounterScreen() {
         onClose={() => setOpenModal(null)}
         onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
         onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
-        onResetStats={() => setOpenModal('resetAllConfirm')}
+        onResetStats={() => dispatch({ type: 'resetAll' })}
       />
 
       <ConfirmModal
         visible={openModal === 'resetConfirm'}
-        title="بدء دورة جديدة"
-        message="سيُعاد عداد الدورة الحالية إلى الصفر لتبدأ من جديد"
-        confirmLabel="نعم، ابدأ من جديد"
-        cancelLabel="متابعة الورد"
-        onClose={() => setOpenModal(null)}
-        onConfirm={() => dispatch({ type: 'reset' })}
-      />
-
-      <ConfirmModal
-        visible={openModal === 'resetAllConfirm'}
-        title="تصفير الإحصائيات"
-        message="سيُحذف العدد الحالي ومجموع التسبيحات الكلي نهائيًا من جهازك"
-        confirmLabel="نعم، صفّر الكل"
-        onClose={() => setOpenModal(null)}
-        onConfirm={() => dispatch({ type: 'resetAll' })}
-      />
-
-      <ConfirmModal
-        visible={pendingDhikr !== null}
-        title="تغيير الذكر"
-        message={`سيُصفَّر العدد الحالي (${toArabicDigits(state.count)}) ويبدأ ورد «${pendingDhikr?.title ?? ''}» من جديد`}
-        confirmLabel="نعم، غيّر الذكر"
-        onClose={() => setPendingDhikr(null)}
-        onConfirm={() => {
-          if (pendingDhikr) dispatch({ type: 'setDhikr', dhikrId: pendingDhikr.id });
+        title={pendingDhikr ? 'تغيير الذكر' : 'إعادة ضبط العداد'}
+        message={
+          pendingDhikr
+            ? `الانتقال إلى "${pendingDhikr.title}" سيُعيد العداد إلى الصفر. هل تريد المتابعة؟`
+            : 'سيُعاد عداد الدورة الحالية إلى الصفر. هل تريد المتابعة؟'
+        }
+        confirmLabel={pendingDhikr ? 'تغيير وبدء جديد' : 'نعم، ابدأ من جديد'}
+        onClose={() => {
+          setPendingDhikr(null);
+          setOpenModal(null);
         }}
+        onConfirm={handleConfirmReset}
       />
     </LinearGradient>
   );
@@ -581,51 +541,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     zIndex: 20,
   },
-  titleSection: {
-    flexDirection: 'column',
-  },
-  titleRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  appTitle: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  appSubtitle: {
-    color: colors.textDim,
-    fontSize: 11,
-    marginTop: 2,
-  },
-  topActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  totalPill: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: 'rgba(210, 230, 218, 0.16)',
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  totalPillLabel: {
-    color: colors.textDim,
-    fontSize: 10.5,
-  },
-  totalPillNumber: {
-    color: colors.goldLight,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  iconButton: {
+  menuButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderColor: 'rgba(210, 230, 218, 0.16)',
@@ -635,9 +551,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
-  iconButtonActive: {
+  titleSection: {
+    alignItems: 'center',
+  },
+  appTitle: {
+    color: colors.goldLight,
+    fontSize: 27,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    ...Platform.select({
+      ios: {
+        textShadowColor: 'rgba(224, 194, 128, 0.5)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 8,
+      },
+      android: {},
+    }),
+  },
+  sessionPill: {
+    alignItems: 'center',
     backgroundColor: 'rgba(223, 186, 107, 0.15)',
-    borderColor: colors.goldBadgeBorder,
+    borderColor: 'rgba(247, 229, 169, 0.35)',
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  sessionPillTop: {
+    color: colors.goldLight,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  sessionPillBottom: {
+    color: colors.textMuted,
+    fontSize: 10,
+    marginTop: 1,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -649,83 +597,30 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 16,
     paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  freeTapOverlay: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(5, 13, 10, 0.9)',
-    zIndex: 30,
-  },
-  freeTapSurface: {
-    ...StyleSheet.absoluteFill,
-  },
-  freeTapSurfacePressed: {
-    backgroundColor: 'rgba(223, 186, 107, 0.06)',
-  },
-  freeTapHud: {
-    ...StyleSheet.absoluteFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  freeTapStatus: {
-    alignItems: 'center',
-  },
-  freeTapEyebrow: {
-    color: colors.goldLight,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    marginBottom: 12,
-  },
-  freeTapCount: {
-    color: colors.text,
-    fontSize: 84,
-    fontWeight: '300',
-    letterSpacing: -2,
-    lineHeight: 100,
-  },
-  freeTapTarget: {
-    color: colors.textMuted,
-    fontSize: 14,
-    marginTop: 2,
-  },
-  freeTapHint: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 22,
-  },
-  freeTapExitButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: colors.surfaceBorder,
-    borderRadius: 22,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    position: 'absolute',
-  },
-  freeTapExitText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '700',
+    paddingTop: 10,
   },
   dhikrCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(223, 186, 107, 0.25)',
-    borderRadius: 22,
+    backgroundColor: colors.backgroundCard,
+    borderColor: 'rgba(224, 194, 128, 0.38)',
+    borderRadius: 24,
     borderWidth: 1.2,
     maxWidth: 440,
-    padding: 16,
+    paddingHorizontal: 18,
+    paddingBottom: 16,
+    paddingTop: 18,
+    position: 'relative',
     width: '100%',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
+    elevation: 5,
     zIndex: 20,
+  },
+  rosetteWrapper: {
+    alignSelf: 'center',
+    position: 'absolute',
+    top: -15,
   },
   dhikrCardTop: {
     alignItems: 'center',
@@ -755,18 +650,18 @@ const styles = StyleSheet.create({
   },
   dhikrPhraseText: {
     color: colors.text,
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: '700',
-    lineHeight: 30,
+    lineHeight: 32,
     textAlign: 'center',
   },
   dhikrPhraseLong: {
-    fontSize: 15,
+    fontSize: 15.5,
     lineHeight: 25,
   },
   virtueSnippet: {
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
     borderRadius: 12,
     flexDirection: 'row',
     gap: 6,
@@ -800,7 +695,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     maxWidth: 440,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     width: '100%',
   },
   completionInfo: {
@@ -815,7 +710,7 @@ const styles = StyleSheet.create({
   },
   nextCycleButton: {
     alignItems: 'center',
-    backgroundColor: colors.goldLight,
+    backgroundColor: colors.goldPill,
     borderRadius: 12,
     flexDirection: 'row',
     gap: 6,
@@ -832,11 +727,6 @@ const styles = StyleSheet.create({
     width: '100%',
     zIndex: 20,
   },
-  targetHeaderLabel: {
-    color: colors.textDim,
-    fontSize: 11.5,
-    marginBottom: 8,
-  },
   targetRow: {
     flexDirection: 'row',
     gap: 8,
@@ -844,20 +734,20 @@ const styles = StyleSheet.create({
   },
   targetChip: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.045)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderColor: colors.surfaceBorder,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     flex: 1,
     height: 42,
     justifyContent: 'center',
   },
   customChip: {
-    flex: 1.3,
+    flex: 1.25,
   },
   targetChipSelected: {
-    backgroundColor: colors.goldBadge,
-    borderColor: colors.goldBadgeBorder,
+    backgroundColor: colors.goldPill,
+    borderColor: colors.goldPill,
   },
   targetChipText: {
     color: colors.textMuted,
@@ -865,60 +755,118 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   targetChipTextSelected: {
-    color: colors.goldText,
+    color: colors.onGold,
     fontWeight: '800',
   },
   bottomDock: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderColor: 'rgba(210, 230, 218, 0.12)',
-    borderRadius: 24,
-    borderWidth: 1,
+    backgroundColor: colors.dockBackground,
+    borderColor: colors.dockBorder,
+    borderRadius: 28,
+    borderWidth: 1.2,
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     maxWidth: 440,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 10,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
     zIndex: 20,
   },
-  dockButton: {
+  dockItem: {
     alignItems: 'center',
     flex: 1,
-    gap: 5,
+    gap: 4,
     justifyContent: 'center',
+    paddingVertical: 2,
   },
-  dockButtonSpecial: {
-    flex: 1.2,
-  },
-  dockButtonActive: {},
-  dockIconCircle: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderColor: 'rgba(210, 230, 218, 0.15)',
-    borderRadius: 21,
-    borderWidth: 1,
-    height: 42,
-    justifyContent: 'center',
-    width: 42,
-  },
-  dockIconCircleActive: {
-    backgroundColor: 'rgba(223, 186, 107, 0.18)',
-    borderColor: colors.goldBadgeBorder,
-  },
-  dockLabel: {
-    color: colors.textDim,
-    fontSize: 11,
+  dockItemLabel: {
+    color: colors.textMuted,
+    fontSize: 10.5,
     fontWeight: '600',
   },
-  dockLabelActive: {
-    color: colors.goldText,
-    fontWeight: '700',
+  dockDivider: {
+    backgroundColor: colors.dockDivider,
+    height: 24,
+    width: 1,
   },
   privacyNote: {
     color: colors.textFaint,
     fontSize: 10.5,
     textAlign: 'center',
+  },
+  freeTapOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(3, 10, 7, 0.94)',
+    zIndex: 100,
+  },
+  freeTapSurface: {
+    ...StyleSheet.absoluteFill,
+  },
+  freeTapSurfacePressed: {
+    backgroundColor: 'rgba(223, 186, 107, 0.06)',
+  },
+  freeTapHud: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  freeTapStatus: {
+    alignItems: 'center',
+  },
+  freeTapEyebrow: {
+    color: colors.goldLight,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 16,
+  },
+  freeTapCount: {
+    color: colors.goldLight,
+    fontSize: 92,
+    fontWeight: '300',
+    letterSpacing: -2,
+    lineHeight: 110,
+    ...Platform.select({
+      ios: {
+        textShadowColor: 'rgba(224, 194, 128, 0.45)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 16,
+      },
+      android: {},
+    }),
+  },
+  freeTapTarget: {
+    color: colors.textMuted,
+    fontSize: 14.5,
+    marginTop: 4,
+  },
+  freeTapHint: {
+    color: colors.textDim,
+    fontSize: 12,
+    marginTop: 26,
+  },
+  freeTapExitButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 7,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+    position: 'absolute',
+  },
+  freeTapExitText: {
+    color: colors.goldLight,
+    fontSize: 13,
+    fontWeight: '700',
   },
   pressed: {
     opacity: 0.72,
@@ -926,5 +874,8 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.35,
+  },
+  disabledText: {
+    color: colors.textFaint,
   },
 });

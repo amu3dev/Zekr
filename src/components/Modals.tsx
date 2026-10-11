@@ -31,6 +31,9 @@ function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps)
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
         <Pressable accessibilityLabel="إغلاق" style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card} accessibilityViewIsModal>
+          {/* Top Sheet Handle matching mockup */}
+          <View style={styles.sheetHandle} />
+
           {/* Header */}
           <View style={styles.modalHeader}>
             <View style={{ flex: 1 }}>
@@ -470,6 +473,14 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     elevation: 10,
   },
+  sheetHandle: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.24)',
+    borderRadius: 3,
+    height: 4,
+    marginBottom: 14,
+    width: 38,
+  },
   modalHeader: {
     alignItems: 'flex-start',
     flexDirection: 'row',
@@ -477,9 +488,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    color: colors.text,
-    fontSize: 21,
-    fontWeight: '700',
+    color: colors.goldLight,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   subtitle: {
     color: colors.textDim,
@@ -527,16 +539,21 @@ const styles = StyleSheet.create({
     maxHeight: 380,
   },
   dhikrCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.035)',
-    borderColor: 'rgba(210, 230, 218, 0.1)',
-    borderRadius: 18,
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 14,
+    backgroundColor: 'rgba(16, 40, 31, 0.65)',
+    borderColor: 'rgba(210, 230, 218, 0.12)',
+    borderRadius: 20,
+    borderWidth: 1.2,
+    marginBottom: 12,
+    padding: 16,
   },
   dhikrCardSelected: {
-    backgroundColor: 'rgba(223, 186, 107, 0.09)',
+    backgroundColor: 'rgba(223, 186, 107, 0.12)',
     borderColor: colors.goldBadgeBorder,
+    shadowColor: colors.goldLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
+    elevation: 3,
   },
   dhikrCardHeader: {
     alignItems: 'center',

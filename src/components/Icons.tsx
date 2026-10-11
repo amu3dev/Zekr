@@ -13,6 +13,14 @@ export function SettingsIcon({ size = 20, color = colors.icon }: IconProps) {
   );
 }
 
+export function MenuIcon({ size = 20, color = colors.icon }: IconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round">
+      <Path d="M4 7h16M4 12h11M4 17h16" />
+    </Svg>
+  );
+}
+
 export function UndoIcon({ size = 20, color = colors.icon }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
@@ -102,6 +110,22 @@ export function NextCycleIcon({ size = 20, color = colors.onGold }: IconProps) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M5 12h14" />
       <Path d="m12 5 7 7-7 7" />
+    </Svg>
+  );
+}
+
+/** Ornate Islamic Medallion Rosette Clasp featured at the top of the card */
+export function RosetteClasp({ size = 32 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32">
+      <Circle cx="16" cy="16" r="14" fill="#0C2017" stroke={colors.goldLight} strokeWidth={1.2} />
+      <Circle cx="16" cy="16" r="11" fill="none" stroke={colors.gold} strokeWidth={0.8} strokeDasharray="2 3" />
+      <Path
+        d="M16 8 L18.5 13.5 L24 16 L18.5 18.5 L16 24 L13.5 18.5 L8 16 L13.5 13.5 Z"
+        fill={colors.goldLight}
+        opacity={0.85}
+      />
+      <Circle cx="16" cy="16" r="3" fill="#FFF9E0" />
     </Svg>
   );
 }
