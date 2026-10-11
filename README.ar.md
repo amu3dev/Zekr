@@ -116,7 +116,7 @@
 ## 🚀 التثبيت والتشغيل محليًا
 
 ### المتطلبات الأساسية
-- تثبيت **Node.js** (إصدار 18 أو أحدث)
+- تثبيت **Node.js** (إصدار 22.13 أو أحدث)
 - تطبيق **Expo Go** على هاتفك ([iOS App Store](https://apps.apple.com/app/expo-go/id982107779) / [Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent))، أو محاكي iOS / Android.
 
 ### خطوات التشغيل

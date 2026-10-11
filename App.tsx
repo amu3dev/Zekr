@@ -4,7 +4,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import {
   AppState,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,6 +18,7 @@ import { CounterRing } from './src/components/CounterRing';
 import {
   BookIcon,
   ChevronDownIcon,
+  CloseIcon,
   FullScreenIcon,
   NextCycleIcon,
   ResetIcon,
@@ -131,6 +131,11 @@ function CounterScreen() {
     playHaptic('success', state.hapticsEnabled);
   };
 
+  const handleExitFullScreenTap = () => {
+    dispatch({ type: 'setFullScreenTap', enabled: false });
+    playHaptic('tap', state.hapticsEnabled);
+  };
+
   return (
     <LinearGradient
       colors={[colors.backgroundStart, colors.backgroundMid, colors.backgroundEnd]}
@@ -145,7 +150,11 @@ function CounterScreen() {
       {isLoaded && (
         <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           {/* Top Bar Navigation */}
-          <View style={styles.topBar}>
+          <View
+            accessibilityElementsHidden={state.fullScreenTap}
+            importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
+            style={styles.topBar}
+          >
             <View style={styles.titleSection}>
               <View style={styles.titleRow}>
                 <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
@@ -201,8 +210,10 @@ function CounterScreen() {
 
           {/* Main Scroll Content */}
           <ScrollView
+            accessibilityElementsHidden={state.fullScreenTap}
             bounces={false}
             contentContainerStyle={styles.scrollContainer}
+            importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
             showsVerticalScrollIndicator={false}
           >
             {/* Main Content Container */}
@@ -436,6 +447,50 @@ function CounterScreen() {
               <Text style={styles.privacyNote}>بياناتك محفوظة على جهازك فقط</Text>
             </View>
           </ScrollView>
+
+          {state.fullScreenTap ? (
+            <View accessibilityViewIsModal style={styles.freeTapOverlay}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`النقر الحر لعدّاد ${dhikr.title}`}
+                accessibilityHint="اضغط لزيادة العدّاد، واستخدم زر إنهاء الوضع للعودة"
+                accessibilityValue={{
+                  text: `${toArabicDigits(state.count)} من ${toArabicDigits(state.target)}`,
+                }}
+                onPress={handleIncrement}
+                style={({ pressed }) => [
+                  styles.freeTapSurface,
+                  pressed && styles.freeTapSurfacePressed,
+                ]}
+              />
+
+              <View pointerEvents="box-none" style={styles.freeTapHud}>
+                <View pointerEvents="none" style={styles.freeTapStatus}>
+                  <Text style={styles.freeTapEyebrow}>النقر الحر مفعل</Text>
+                  <Text style={styles.freeTapCount}>{toArabicDigits(state.count)}</Text>
+                  <Text style={styles.freeTapTarget}>
+                    من {toArabicDigits(state.target)} · {dhikr.title}
+                  </Text>
+                  <Text style={styles.freeTapHint}>المس أي مكان لزيادة العدّ</Text>
+                </View>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="إنهاء وضع النقر الحر"
+                  hitSlop={8}
+                  onPress={handleExitFullScreenTap}
+                  style={({ pressed }) => [
+                    styles.freeTapExitButton,
+                    { bottom: insets.bottom + 18 },
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <CloseIcon size={16} color={colors.text} />
+                  <Text style={styles.freeTapExitText}>إنهاء الوضع</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
         </View>
       )}
 
@@ -595,6 +650,67 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     paddingHorizontal: 20,
     paddingTop: 8,
+  },
+  freeTapOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(5, 13, 10, 0.9)',
+    zIndex: 30,
+  },
+  freeTapSurface: {
+    ...StyleSheet.absoluteFill,
+  },
+  freeTapSurfacePressed: {
+    backgroundColor: 'rgba(223, 186, 107, 0.06)',
+  },
+  freeTapHud: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  freeTapStatus: {
+    alignItems: 'center',
+  },
+  freeTapEyebrow: {
+    color: colors.goldLight,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    marginBottom: 12,
+  },
+  freeTapCount: {
+    color: colors.text,
+    fontSize: 84,
+    fontWeight: '300',
+    letterSpacing: -2,
+    lineHeight: 100,
+  },
+  freeTapTarget: {
+    color: colors.textMuted,
+    fontSize: 14,
+    marginTop: 2,
+  },
+  freeTapHint: {
+    color: colors.textDim,
+    fontSize: 12,
+    marginTop: 22,
+  },
+  freeTapExitButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 22,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 7,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    position: 'absolute',
+  },
+  freeTapExitText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
   dhikrCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',

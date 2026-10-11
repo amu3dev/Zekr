@@ -12,6 +12,8 @@
     },
     "android": {
       "package": "app.dhikr.counter",
+      "versionCode": 1,
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#050D0A",
         "foregroundImage": "./assets/android-icon-foreground.png",

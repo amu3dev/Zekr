@@ -118,7 +118,7 @@ For non-native Arabic speakers, here is a guide to the authentic remembrances in
 ## 🚀 Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) (v18 or newer recommended)
+- [Node.js](https://nodejs.org/) (v22.13 or newer)
 - **Expo Go** app on your physical mobile device ([iOS](https://apps.apple.com/app/expo-go/id982107779) / [Android](https://play.google.com/store/apps/details?id=host.exp.exponent)), or an iOS Simulator / Android Emulator.
 
 ### Installation & Launch
