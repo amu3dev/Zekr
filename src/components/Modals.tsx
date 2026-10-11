@@ -12,20 +12,41 @@ import {
   View,
 } from 'react-native';
 
-import { normalizeDigits, toArabicDigits } from '../arabic';
-import { DHIKR_OPTIONS, isValidTarget, MAX_TARGET, MIN_TARGET } from '../counter';
+import { formatArabicNumber, normalizeDigits, toArabicDigits } from '../arabic';
+import { DHIKR_OPTIONS, DhikrOption, isValidTarget, MAX_TARGET, MIN_TARGET } from '../counter';
 import { colors } from '../theme';
+import { BookIcon, CheckIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
 
-type ShellProps = { visible: boolean; title: string; subtitle: string; onClose: () => void; children: ReactNode };
+type ShellProps = {
+  visible: boolean;
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: ReactNode;
+};
 
 function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps) {
   return (
     <Modal animationType="fade" transparent statusBarTranslucent navigationBarTranslucent visible={visible} onRequestClose={onClose}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.backdrop}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
         <Pressable accessibilityLabel="إغلاق" style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card} accessibilityViewIsModal>
-          <Text style={styles.title} accessibilityRole="header">{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.title} accessibilityRole="header">{title}</Text>
+              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="إغلاق"
+              hitSlop={8}
+              onPress={onClose}
+              style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+            >
+              <CloseIcon size={18} color={colors.textMuted} />
+            </Pressable>
+          </View>
           {children}
         </View>
       </KeyboardAvoidingView>
@@ -33,20 +54,171 @@ function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps)
   );
 }
 
-function ModalButton({ label, primary, onPress }: { label: string; primary?: boolean; onPress: () => void }) {
+function ActionButton({
+  label,
+  variant = 'primary',
+  onPress,
+}: {
+  label: string;
+  variant?: 'primary' | 'secondary' | 'danger';
+  onPress: () => void;
+}) {
+  const isPrimary = variant === 'primary';
+  const isDanger = variant === 'danger';
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [primary ? styles.primaryButton : styles.secondaryButton, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.actionButton,
+        isPrimary && styles.primaryButton,
+        isDanger && styles.dangerButton,
+        !isPrimary && !isDanger && styles.secondaryButton,
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={primary ? styles.primaryText : styles.secondaryText}>{label}</Text>
+      <Text
+        style={[
+          styles.actionButtonText,
+          isPrimary && styles.primaryText,
+          isDanger && styles.dangerText,
+          !isPrimary && !isDanger && styles.secondaryText,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
-type CustomTargetProps = { visible: boolean; currentTarget: number; onClose: () => void; onSave: (target: number) => void };
+/* =========================================================================
+   1. DHIKR PICKER SHEET
+   ========================================================================= */
+
+type DhikrPickerProps = {
+  visible: boolean;
+  selectedId: string;
+  onClose: () => void;
+  onSelect: (option: DhikrOption) => void;
+};
+
+export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: DhikrPickerProps) {
+  const [activeCategory, setActiveCategory] = useState<string>('الكل');
+
+  const categories = ['الكل', 'تسابيح', 'أذكار جامعة', 'استغفار', 'صلاة على النبي'];
+
+  const filteredDhikrs =
+    activeCategory === 'الكل'
+      ? DHIKR_OPTIONS
+      : DHIKR_OPTIONS.filter((item) => item.category === activeCategory);
+
+  return (
+    <ModalShell
+      visible={visible}
+      title="مكتبة الأذكار"
+      subtitle="اختر الذكر المأثور لتبدأ ورده وفضله"
+      onClose={onClose}
+    >
+      {/* Category Pills */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoryScroll}
+        style={styles.categoryContainer}
+      >
+        {categories.map((cat) => {
+          const isSelected = activeCategory === cat;
+          return (
+            <Pressable
+              key={cat}
+              onPress={() => setActiveCategory(cat)}
+              style={({ pressed }) => [
+                styles.categoryChip,
+                isSelected && styles.categoryChipSelected,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  isSelected && styles.categoryChipTextSelected,
+                ]}
+              >
+                {cat}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Dhikr Cards List */}
+      <ScrollView style={styles.dhikrList} showsVerticalScrollIndicator={false}>
+        {filteredDhikrs.map((item) => {
+          const isSelected = item.id === selectedId;
+          return (
+            <Pressable
+              key={item.id}
+              accessibilityRole="radio"
+              accessibilityLabel={item.phrase}
+              accessibilityState={{ checked: isSelected }}
+              onPress={() => {
+                onSelect(item);
+                onClose();
+              }}
+              style={({ pressed }) => [
+                styles.dhikrCard,
+                isSelected && styles.dhikrCardSelected,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={styles.dhikrCardHeader}>
+                <View style={styles.dhikrTitleRow}>
+                  <Text style={[styles.dhikrTitle, isSelected && styles.dhikrTitleSelected]}>
+                    {item.title}
+                  </Text>
+                  <View style={styles.dhikrBadge}>
+                    <Text style={styles.dhikrBadgeText}>الهدف {toArabicDigits(item.defaultTarget)}</Text>
+                  </View>
+                </View>
+                {isSelected && (
+                  <View style={styles.selectedCircle}>
+                    <CheckIcon size={14} color={colors.onGold} />
+                  </View>
+                )}
+              </View>
+
+              <Text style={styles.dhikrPhrase}>{item.phrase}</Text>
+
+              {item.virtue ? (
+                <View style={styles.virtueBox}>
+                  <SparkleIcon size={13} color={colors.goldLight} />
+                  <Text style={styles.virtueText} numberOfLines={2}>
+                    {item.virtue}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </ModalShell>
+  );
+}
+
+/* =========================================================================
+   2. CUSTOM TARGET MODAL
+   ========================================================================= */
+
+type CustomTargetProps = {
+  visible: boolean;
+  currentTarget: number;
+  onClose: () => void;
+  onSave: (target: number) => void;
+};
+
+const TARGET_PRESETS = [33, 99, 100, 300, 500, 1000];
 
 export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: CustomTargetProps) {
   const [text, setText] = useState('');
@@ -54,38 +226,65 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
 
   useEffect(() => {
     if (visible) {
-      setText('');
+      setText(String(currentTarget));
       setError(null);
     }
-  }, [visible]);
+  }, [visible, currentTarget]);
 
-  const save = () => {
-    const digits = normalizeDigits(text).trim();
-    const value = /^\d+$/.test(digits) ? Number(digits) : NaN;
-    if (!isValidTarget(value)) {
-      setError(`اكتب عددًا من ${toArabicDigits(MIN_TARGET)} إلى ${toArabicDigits(MAX_TARGET)}`);
+  const handleSave = (targetValue?: number) => {
+    const rawVal = targetValue !== undefined ? targetValue : Number(normalizeDigits(text).trim());
+    if (!isValidTarget(rawVal)) {
+      setError(`يرجى كتابة عدد صحيح بين ${toArabicDigits(MIN_TARGET)} و ${toArabicDigits(MAX_TARGET)}`);
       return;
     }
-    onSave(value);
+    onSave(rawVal);
   };
 
   return (
     <ModalShell
       visible={visible}
-      title="هدف مخصص"
-      subtitle={`الهدف الحالي ${toArabicDigits(currentTarget)} — اختر عددًا من ${toArabicDigits(MIN_TARGET)} إلى ${toArabicDigits(MAX_TARGET)}`}
+      title="تحديد الهدف"
+      subtitle={`الهدف الحالي: ${toArabicDigits(currentTarget)} عدّة`}
       onClose={onClose}
     >
+      <View style={styles.quickPresetsRow}>
+        {TARGET_PRESETS.map((preset) => {
+          const isPresetCurrent = currentTarget === preset;
+          return (
+            <Pressable
+              key={preset}
+              onPress={() => handleSave(preset)}
+              style={({ pressed }) => [
+                styles.presetChip,
+                isPresetCurrent && styles.presetChipSelected,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.presetChipText,
+                  isPresetCurrent && styles.presetChipTextSelected,
+                ]}
+              >
+                {toArabicDigits(preset)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={styles.inputSectionLabel}>أو اكتب عددًا مخصصًا:</Text>
+
       <TextInput
-        accessibilityLabel="عدد الهدف المخصص"
+        accessibilityLabel="الهدف المخصص"
         autoFocus
         keyboardType="number-pad"
         maxLength={4}
-        onChangeText={(value) => {
-          setText(value);
+        onChangeText={(val) => {
+          setText(val);
           setError(null);
         }}
-        onSubmitEditing={save}
+        onSubmitEditing={() => handleSave()}
         placeholder="مثال: ٥٠"
         placeholderTextColor={colors.textFaint}
         returnKeyType="done"
@@ -93,64 +292,152 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
         textAlign="center"
         value={text}
       />
-      {error && <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text>}
+
+      {error && <Text style={styles.errorText} accessibilityLiveRegion="polite">{error}</Text>}
+
       <View style={styles.actions}>
-        <ModalButton label="حفظ الهدف" primary onPress={save} />
-        <ModalButton label="إلغاء" onPress={onClose} />
+        <ActionButton label="حفظ الهدف" variant="primary" onPress={() => handleSave()} />
+        <ActionButton label="إلغاء" variant="secondary" onPress={onClose} />
       </View>
     </ModalShell>
   );
 }
+
+/* =========================================================================
+   3. SETTINGS MODAL
+   ========================================================================= */
 
 type SettingsProps = {
   visible: boolean;
-  dhikrId: string;
   hapticsEnabled: boolean;
+  fullScreenTap: boolean;
+  totalSessionCount: number;
   onClose: () => void;
-  onSelectDhikr: (id: string) => void;
   onToggleHaptics: (enabled: boolean) => void;
+  onToggleFullScreenTap: (enabled: boolean) => void;
+  onResetStats: () => void;
 };
 
-export function SettingsModal({ visible, dhikrId, hapticsEnabled, onClose, onSelectDhikr, onToggleHaptics }: SettingsProps) {
+export function SettingsModal({
+  visible,
+  hapticsEnabled,
+  fullScreenTap,
+  totalSessionCount,
+  onClose,
+  onToggleHaptics,
+  onToggleFullScreenTap,
+  onResetStats,
+}: SettingsProps) {
   return (
-    <ModalShell visible={visible} title="الإعدادات" subtitle="اختر الذكر وطريقة الإحساس أثناء العدّ" onClose={onClose}>
-      <Text style={styles.sectionLabel}>الذكر الحالي</Text>
-      <ScrollView style={styles.optionList} contentContainerStyle={styles.optionListContent}>
-        {DHIKR_OPTIONS.map((option) => {
-          const selected = option.id === dhikrId;
-          return (
+    <ModalShell
+      visible={visible}
+      title="الإعدادات والتفضيلات"
+      subtitle="تخصيص تجربة التسبيح والمزايا اللمسية"
+      onClose={onClose}
+    >
+      <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+        {/* Haptics Switch */}
+        <View style={styles.settingItem}>
+          <View style={styles.settingItemIconWrap}>
+            <VibrateIcon size={20} color={colors.goldLight} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingTitle}>الاهتزاز اللمسي</Text>
+            <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
+          </View>
+          <Switch
+            value={hapticsEnabled}
+            onValueChange={onToggleHaptics}
+            trackColor={{ false: colors.track, true: colors.green }}
+            thumbColor={hapticsEnabled ? colors.goldLight : colors.textMuted}
+          />
+        </View>
+
+        {/* Fullscreen Tap Switch */}
+        <View style={styles.settingItem}>
+          <View style={styles.settingItemIconWrap}>
+            <FullScreenIcon size={20} color={colors.goldLight} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingTitle}>النقر في كامل الشاشة</Text>
+            <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
+          </View>
+          <Switch
+            value={fullScreenTap}
+            onValueChange={onToggleFullScreenTap}
+            trackColor={{ false: colors.track, true: colors.green }}
+            thumbColor={fullScreenTap ? colors.goldLight : colors.textMuted}
+          />
+        </View>
+
+        {/* Stats Card */}
+        <View style={styles.statsCard}>
+          <Text style={styles.statsLabel}>مجموع التسبيحات الكلي</Text>
+          <Text style={styles.statsCount}>{formatArabicNumber(totalSessionCount)}</Text>
+          <Text style={styles.statsSubtext}>تسبيحة وذكر بحمد الله</Text>
+
+          {totalSessionCount > 0 && (
             <Pressable
-              key={option.id}
-              accessibilityRole="radio"
-              accessibilityLabel={option.phrase}
-              accessibilityState={{ checked: selected }}
-              onPress={() => onSelectDhikr(option.id)}
-              style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.pressed]}
+              onPress={onResetStats}
+              style={({ pressed }) => [styles.resetStatsButton, pressed && styles.pressed]}
             >
-              <View style={[styles.radio, selected && styles.radioSelected]} />
-              <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{option.phrase}</Text>
+              <Text style={styles.resetStatsText}>تصفير الإحصائيات</Text>
             </Pressable>
-          );
-        })}
+          )}
+        </View>
+
+        {/* Spiritual Note */}
+        <View style={styles.aboutBox}>
+          <BookIcon size={16} color={colors.goldLight} />
+          <Text style={styles.aboutText}>
+            تطبيق «ذِكر» صُمم ليكون رفيقًا هادئًا لذكر الله، خاليًا تمامًا من الإعلانات والتتبع. بياناتك محفوظة محليًا على جهازك فقط.
+          </Text>
+        </View>
       </ScrollView>
 
-      <View style={styles.settingRow}>
-        <Text style={styles.settingLabel}>اهتزاز خفيف عند كل عدّة</Text>
-        <Switch
-          accessibilityLabel="الاهتزاز عند العدّ"
-          onValueChange={onToggleHaptics}
-          value={hapticsEnabled}
-          trackColor={{ false: colors.track, true: colors.green }}
-          thumbColor={hapticsEnabled ? colors.goldLight : colors.textMuted}
-        />
-      </View>
-
       <View style={styles.actions}>
-        <ModalButton label="تم" primary onPress={onClose} />
+        <ActionButton label="تم" variant="primary" onPress={onClose} />
       </View>
     </ModalShell>
   );
 }
+
+/* =========================================================================
+   4. RESET CONFIRMATION MODAL
+   ========================================================================= */
+
+type ResetConfirmProps = {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+};
+
+export function ResetConfirmModal({ visible, onClose, onConfirm }: ResetConfirmProps) {
+  return (
+    <ModalShell
+      visible={visible}
+      title="بدء دورة جديدة"
+      subtitle="سيُعاد عداد الدورة الحالية إلى الصفر لتبدأ من جديد"
+      onClose={onClose}
+    >
+      <View style={styles.actions}>
+        <ActionButton
+          label="نعم، ابدأ من جديد"
+          variant="danger"
+          onPress={() => {
+            onConfirm();
+            onClose();
+          }}
+        />
+        <ActionButton label="متابعة الورد" variant="secondary" onPress={onClose} />
+      </View>
+    </ModalShell>
+  );
+}
+
+/* =========================================================================
+   STYLES
+   ========================================================================= */
 
 const styles = StyleSheet.create({
   backdrop: {
@@ -163,76 +450,310 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.modalCard,
-    borderColor: 'rgba(214,185,108,0.35)',
-    borderRadius: 24,
-    borderWidth: 1,
-    maxHeight: '90%',
-    maxWidth: 420,
+    borderColor: colors.modalBorder,
+    borderRadius: 26,
+    borderWidth: 1.2,
+    maxHeight: '88%',
+    maxWidth: 440,
     padding: 22,
     width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
+    elevation: 10,
   },
-  title: { color: colors.text, fontSize: 20, fontWeight: '700' },
-  subtitle: { color: colors.textMuted, fontSize: 12, lineHeight: 19, marginTop: 6 },
-  input: {
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    borderColor: 'rgba(182,198,184,0.24)',
-    borderRadius: 14,
-    borderWidth: 1,
-    color: colors.text,
-    fontSize: 22,
-    marginTop: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  inputError: { borderColor: colors.danger },
-  error: { color: colors.danger, fontSize: 12, marginTop: 8 },
-  actions: { flexDirection: 'row', gap: 10, marginTop: 20 },
-  primaryButton: {
-    alignItems: 'center',
-    backgroundColor: colors.goldLight,
-    borderRadius: 14,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  primaryText: { color: colors.onGold, fontSize: 14, fontWeight: '700' },
-  secondaryButton: {
-    alignItems: 'center',
-    borderColor: 'rgba(182,198,184,0.28)',
-    borderRadius: 14,
-    borderWidth: 1,
-    flex: 1,
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  secondaryText: { color: colors.textMuted, fontSize: 14 },
-  sectionLabel: { color: colors.textDim, fontSize: 12, marginTop: 18, marginBottom: 8 },
-  optionList: { flexGrow: 0 },
-  optionListContent: { gap: 6 },
-  option: {
-    alignItems: 'center',
-    borderColor: 'transparent',
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 10,
-    minHeight: 44,
-    paddingHorizontal: 12,
-  },
-  optionSelected: { backgroundColor: 'rgba(185,149,84,0.12)', borderColor: 'rgba(214,185,108,0.35)' },
-  radio: { borderColor: colors.textDim, borderRadius: 8, borderWidth: 1.5, height: 16, width: 16 },
-  radioSelected: { backgroundColor: colors.goldLight, borderColor: colors.goldLight },
-  optionText: { color: colors.textMuted, fontSize: 15 },
-  optionTextSelected: { color: colors.text },
-  settingRow: {
-    alignItems: 'center',
-    borderTopColor: 'rgba(182,198,184,0.14)',
-    borderTopWidth: 1,
+  modalHeader: {
+    alignItems: 'flex-start',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 14,
+    marginBottom: 16,
   },
-  settingLabel: { color: colors.text, flexShrink: 1, fontSize: 14 },
-  pressed: { opacity: 0.72 },
+  title: {
+    color: colors.text,
+    fontSize: 21,
+    fontWeight: '700',
+  },
+  subtitle: {
+    color: colors.textDim,
+    fontSize: 12.5,
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  closeButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  categoryContainer: {
+    marginBottom: 12,
+  },
+  categoryScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 2,
+  },
+  categoryChip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  categoryChipSelected: {
+    backgroundColor: colors.goldBadge,
+    borderColor: colors.goldBadgeBorder,
+  },
+  categoryChipText: {
+    color: colors.textDim,
+    fontSize: 12,
+  },
+  categoryChipTextSelected: {
+    color: colors.goldText,
+    fontWeight: '700',
+  },
+  dhikrList: {
+    maxHeight: 380,
+  },
+  dhikrCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.035)',
+    borderColor: 'rgba(210, 230, 218, 0.1)',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginBottom: 10,
+    padding: 14,
+  },
+  dhikrCardSelected: {
+    backgroundColor: 'rgba(223, 186, 107, 0.09)',
+    borderColor: colors.goldBadgeBorder,
+  },
+  dhikrCardHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  dhikrTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dhikrTitle: {
+    color: colors.textSoft,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  dhikrTitleSelected: {
+    color: colors.goldLight,
+  },
+  dhikrBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  dhikrBadgeText: {
+    color: colors.textDim,
+    fontSize: 10,
+  },
+  selectedCircle: {
+    alignItems: 'center',
+    backgroundColor: colors.goldLight,
+    borderRadius: 12,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  dhikrPhrase: {
+    color: colors.text,
+    fontSize: 16.5,
+    fontWeight: '600',
+    lineHeight: 26,
+    marginBottom: 8,
+  },
+  virtueBox: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  virtueText: {
+    color: colors.textDim,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  quickPresetsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  presetChip: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    borderWidth: 1,
+    flex: 1,
+    minWidth: '28%',
+    paddingVertical: 10,
+  },
+  presetChipSelected: {
+    backgroundColor: colors.goldBadge,
+    borderColor: colors.goldBadgeBorder,
+  },
+  presetChipText: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  presetChipTextSelected: {
+    color: colors.goldText,
+    fontWeight: '700',
+  },
+  inputSectionLabel: {
+    color: colors.textDim,
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 16,
+    borderWidth: 1.2,
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '700',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  inputError: {
+    borderColor: colors.danger,
+  },
+  errorText: {
+    color: colors.danger,
+    fontSize: 11.5,
+    marginTop: 6,
+  },
+  settingItem: {
+    alignItems: 'center',
+    borderBottomColor: 'rgba(210, 230, 218, 0.08)',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  settingItemIconWrap: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(223, 186, 107, 0.1)',
+    borderRadius: 12,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  settingTitle: {
+    color: colors.text,
+    fontSize: 14.5,
+    fontWeight: '600',
+  },
+  settingDesc: {
+    color: colors.textDim,
+    fontSize: 11.5,
+    marginTop: 2,
+  },
+  statsCard: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(223, 186, 107, 0.2)',
+    borderRadius: 18,
+    borderWidth: 1,
+    marginVertical: 16,
+    padding: 16,
+  },
+  statsLabel: {
+    color: colors.textDim,
+    fontSize: 12,
+  },
+  statsCount: {
+    color: colors.goldLight,
+    fontSize: 32,
+    fontWeight: '800',
+    marginVertical: 4,
+  },
+  statsSubtext: {
+    color: colors.textMuted,
+    fontSize: 11,
+  },
+  resetStatsButton: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  resetStatsText: {
+    color: colors.danger,
+    fontSize: 11,
+  },
+  aboutBox: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    borderRadius: 14,
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+    padding: 12,
+  },
+  aboutText: {
+    color: colors.textDim,
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  actionButton: {
+    alignItems: 'center',
+    borderRadius: 14,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 48,
+  },
+  primaryButton: {
+    backgroundColor: colors.gold,
+  },
+  secondaryButton: {
+    borderColor: colors.surfaceBorder,
+    borderWidth: 1,
+  },
+  dangerButton: {
+    backgroundColor: colors.dangerBg,
+    borderColor: colors.dangerBorder,
+    borderWidth: 1,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  primaryText: {
+    color: colors.onGold,
+  },
+  secondaryText: {
+    color: colors.textMuted,
+  },
+  dangerText: {
+    color: colors.danger,
+  },
+  pressed: {
+    opacity: 0.72,
+  },
 });

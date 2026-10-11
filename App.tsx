@@ -2,24 +2,57 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useReducer, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { toArabicDigits } from './src/arabic';
+import { formatArabicNumber, toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
-import { ResetIcon, SettingsIcon, UndoIcon } from './src/components/Icons';
-import { CustomTargetModal, SettingsModal } from './src/components/Modals';
-import { counterReducer, getDhikr, initialCounterState, PRESET_TARGETS } from './src/counter';
+import {
+  BookIcon,
+  ChevronDownIcon,
+  FullScreenIcon,
+  NextCycleIcon,
+  ResetIcon,
+  SettingsIcon,
+  SparkleIcon,
+  UndoIcon,
+  VibrateIcon,
+} from './src/components/Icons';
+import { IslamicGeometryBackground } from './src/components/IslamicGeometry';
+import {
+  CustomTargetModal,
+  DhikrPickerModal,
+  ResetConfirmModal,
+  SettingsModal,
+} from './src/components/Modals';
+import {
+  counterReducer,
+  getDhikr,
+  initialCounterState,
+  PRESET_TARGETS,
+} from './src/counter';
 import { loadCounterState, saveCounterState } from './src/storage';
 import { colors } from './src/theme';
 
-type OpenModal = 'settings' | 'customTarget' | null;
+type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | null;
 
-function playHaptic(kind: 'tap' | 'success') {
-  const feedback = kind === 'success'
-    ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  feedback.catch(() => undefined);
+function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
+  if (!enabled) return;
+  if (kind === 'success') {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  } else if (kind === 'warning') {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => undefined);
+  } else {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
+  }
 }
 
 function CounterScreen() {
@@ -42,163 +75,347 @@ function CounterScreen() {
 
   const dhikr = getDhikr(state.dhikrId);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
-  const availableHeight = height - insets.top - insets.bottom;
-  const ringSize = Math.round(Math.max(200, Math.min(width - 56, availableHeight * 0.44, 340)));
-  const compact = availableHeight < 640;
+  const isComplete = state.count >= state.target;
 
-  const increment = () => {
+  const availableHeight = height - insets.top - insets.bottom;
+  const ringSize = Math.round(Math.max(210, Math.min(width - 48, availableHeight * 0.40, 320)));
+  const geometrySize = ringSize * 1.28;
+  const canUndo = state.count > 0;
+
+  const handleIncrement = () => {
     const nextCount = state.count + 1;
     dispatch({ type: 'increment' });
-    if (state.hapticsEnabled) playHaptic(nextCount === state.target ? 'success' : 'tap');
+    playHaptic(nextCount === state.target ? 'success' : 'tap', state.hapticsEnabled);
   };
 
-  const confirmReset = () => {
-    Alert.alert('بدء جديد', 'سيُعاد العداد إلى الصفر. هل تريد المتابعة؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      { text: 'بدء جديد', style: 'destructive', onPress: () => dispatch({ type: 'reset' }) },
-    ]);
+  const handleUndo = () => {
+    if (canUndo) {
+      dispatch({ type: 'undo' });
+      playHaptic('tap', state.hapticsEnabled);
+    }
   };
 
-  const canUndo = state.count > 0;
+  const handleNextCycle = () => {
+    dispatch({ type: 'nextCycle' });
+    playHaptic('success', state.hapticsEnabled);
+  };
 
   return (
     <LinearGradient
       colors={[colors.backgroundStart, colors.backgroundMid, colors.backgroundEnd]}
-      locations={[0, 0.58, 1]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
+      locations={[0, 0.45, 1]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
       style={styles.screen}
     >
       <StatusBar style="light" />
+
+      {/* Screen Container */}
       {isLoaded && (
         <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-          <View pointerEvents="none" style={styles.halo} />
-
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
-              <Text style={styles.appSubtitle}>مسبحة هادئة</Text>
+          {/* Top Bar Navigation */}
+          <View style={styles.topBar}>
+            <View style={styles.titleSection}>
+              <View style={styles.titleRow}>
+                <Text style={styles.appTitle} accessibilityRole="header">ذِكر</Text>
+                <SparkleIcon size={16} color={colors.goldLight} />
+              </View>
+              <Text style={styles.appSubtitle}>رفيق التسبيح والسكينة</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="الإعدادات"
-              hitSlop={8}
-              onPress={() => setOpenModal('settings')}
-              style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
-            >
-              <SettingsIcon />
-            </Pressable>
-          </View>
 
-          <ScrollView
-            bounces={false}
-            contentContainerStyle={[styles.content, compact && styles.contentCompact]}
-            showsVerticalScrollIndicator={false}
-          >
-            <CounterRing
-              size={ringSize}
-              count={state.count}
-              target={state.target}
-              title={dhikr.title}
-              onPress={increment}
-            />
-
-            <View style={styles.phraseBlock}>
-              <View style={styles.progressPill}>
-                <Text style={styles.progressPillText}>
-                  ورد اليوم {toArabicDigits(state.count)} / {toArabicDigits(state.target)}
+            <View style={styles.topActions}>
+              {/* Total Session Pill */}
+              <View style={styles.totalPill}>
+                <Text style={styles.totalPillLabel}>الإجمالي:</Text>
+                <Text style={styles.totalPillNumber}>
+                  {formatArabicNumber(state.totalSessionCount)}
                 </Text>
               </View>
-              <Text style={styles.phrase}>{dhikr.phrase}</Text>
-              <Text style={styles.phraseNote}>يُحفظ عدّك تلقائيًا حتى لو أغلقت التطبيق</Text>
+
+              {/* Quick Haptics Toggle */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="تبديل الاهتزاز"
+                hitSlop={8}
+                onPress={() => {
+                  const nextHaptics = !state.hapticsEnabled;
+                  dispatch({ type: 'setHaptics', enabled: nextHaptics });
+                  playHaptic('tap', nextHaptics);
+                }}
+                style={({ pressed }) => [
+                  styles.iconButton,
+                  state.hapticsEnabled && styles.iconButtonActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <VibrateIcon
+                  size={19}
+                  color={state.hapticsEnabled ? colors.goldLight : colors.textDim}
+                />
+              </Pressable>
+
+              {/* Settings Button */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="الإعدادات"
+                hitSlop={8}
+                onPress={() => setOpenModal('settings')}
+                style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+              >
+                <SettingsIcon size={19} color={colors.icon} />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Main Scroll Content */}
+          <ScrollView
+            bounces={false}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* 1. Dhikr Showcase Card (Clickable to open library) */}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
+              onPress={() => setOpenModal('dhikrPicker')}
+              style={({ pressed }) => [styles.dhikrCard, pressed && styles.pressed]}
+            >
+              <View style={styles.dhikrCardTop}>
+                <View style={styles.dhikrCategoryBadge}>
+                  <Text style={styles.dhikrCategoryText}>{dhikr.category}</Text>
+                </View>
+                <View style={styles.changeDhikrHint}>
+                  <Text style={styles.changeDhikrText}>تغيير الذكر</Text>
+                  <ChevronDownIcon size={14} color={colors.goldLight} />
+                </View>
+              </View>
+
+              <Text style={styles.dhikrPhraseText}>{dhikr.phrase}</Text>
+
+              {dhikr.virtue ? (
+                <View style={styles.virtueSnippet}>
+                  <SparkleIcon size={12} color={colors.goldLight} />
+                  <Text style={styles.virtueSnippetText} numberOfLines={1}>
+                    {dhikr.virtue}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+
+            {/* 2. Interactive Central Ring & Sacred Geometry */}
+            <View style={styles.ringSection}>
+              {/* Islamic Ambient Geometry in Background */}
+              <View pointerEvents="none" style={styles.geometryWrapper}>
+                <IslamicGeometryBackground size={geometrySize} opacity={0.11} />
+              </View>
+
+              {/* Primary Interactive Ring */}
+              <CounterRing
+                size={ringSize}
+                count={state.count}
+                target={state.target}
+                title={dhikr.title}
+                cycle={state.cycle}
+                onPress={handleIncrement}
+              />
             </View>
 
-            <View style={styles.targetRow} accessibilityRole="radiogroup" accessibilityLabel="الهدف">
-              {PRESET_TARGETS.map((target) => {
-                const selected = state.target === target;
-                return (
-                  <Pressable
-                    key={target}
-                    accessibilityRole="radio"
-                    accessibilityLabel={`الهدف ${toArabicDigits(target)}`}
-                    accessibilityState={{ checked: selected }}
-                    onPress={() => dispatch({ type: 'setTarget', target })}
-                    style={({ pressed }) => [styles.chip, selected && styles.chipSelected, pressed && styles.pressed]}
+            {/* 3. Completion Banner (Shows when target is reached) */}
+            {isComplete ? (
+              <View style={styles.completionBanner}>
+                <View style={styles.completionInfo}>
+                  <SparkleIcon size={18} color={colors.goldLight} />
+                  <Text style={styles.completionTitle}>مبارك! أتممت الورد بنجاح</Text>
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="بدء الدورة التالية"
+                  onPress={handleNextCycle}
+                  style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
+                >
+                  <Text style={styles.nextCycleText}>ابدأ الدورة التالية</Text>
+                  <NextCycleIcon size={16} color={colors.onGold} />
+                </Pressable>
+              </View>
+            ) : null}
+
+            {/* 4. Target Selector Chips */}
+            <View
+              style={styles.targetSection}
+              accessibilityRole="radiogroup"
+              accessibilityLabel="الهدف"
+            >
+              <Text style={styles.targetHeaderLabel}>الهدف المطلوب:</Text>
+              <View style={styles.targetRow}>
+                {PRESET_TARGETS.map((target) => {
+                  const isSelected = state.target === target;
+                  return (
+                    <Pressable
+                      key={target}
+                      accessibilityRole="radio"
+                      accessibilityLabel={`الهدف ${toArabicDigits(target)}`}
+                      accessibilityState={{ checked: isSelected }}
+                      onPress={() => {
+                        dispatch({ type: 'setTarget', target });
+                        playHaptic('tap', state.hapticsEnabled);
+                      }}
+                      style={({ pressed }) => [
+                        styles.targetChip,
+                        isSelected && styles.targetChipSelected,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.targetChipText,
+                          isSelected && styles.targetChipTextSelected,
+                        ]}
+                      >
+                        {toArabicDigits(target)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+
+                <Pressable
+                  accessibilityRole="radio"
+                  accessibilityLabel={
+                    isPresetTarget
+                      ? 'هدف مخصص'
+                      : `هدف مخصص، الحالي ${toArabicDigits(state.target)}`
+                  }
+                  accessibilityState={{ checked: !isPresetTarget }}
+                  onPress={() => setOpenModal('customTarget')}
+                  style={({ pressed }) => [
+                    styles.targetChip,
+                    styles.customChip,
+                    !isPresetTarget && styles.targetChipSelected,
+                    pressed && styles.pressed,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.targetChipText,
+                      !isPresetTarget && styles.targetChipTextSelected,
+                    ]}
                   >
-                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{toArabicDigits(target)}</Text>
-                  </Pressable>
-                );
-              })}
+                    {!isPresetTarget ? `${toArabicDigits(state.target)} ✎` : 'مخصص +'}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* 5. Floating Bottom Control Dock */}
+            <View style={styles.bottomDock}>
+              {/* Reset Button */}
               <Pressable
-                accessibilityRole="radio"
-                accessibilityLabel={isPresetTarget ? 'هدف مخصص' : `هدف مخصص، الحالي ${toArabicDigits(state.target)}`}
-                accessibilityState={{ checked: !isPresetTarget }}
-                onPress={() => setOpenModal('customTarget')}
-                style={({ pressed }) => [styles.chip, styles.chipWide, !isPresetTarget && styles.chipSelected, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="إعادة ضبط العداد"
+                accessibilityState={{ disabled: !canUndo }}
+                disabled={!canUndo}
+                onPress={() => setOpenModal('resetConfirm')}
+                style={({ pressed }) => [
+                  styles.dockButton,
+                  !canUndo && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
               >
-                <Text style={[styles.chipText, !isPresetTarget && styles.chipTextSelected]}>
-                  {isPresetTarget ? 'مخصص +' : `${toArabicDigits(state.target)} ✎`}
+                <View style={styles.dockIconCircle}>
+                  <ResetIcon size={18} color={canUndo ? colors.text : colors.textDim} />
+                </View>
+                <Text style={styles.dockLabel}>بدء جديد</Text>
+              </Pressable>
+
+              {/* FullScreen Tap Mode Toggle */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="وضع النقر الحر في الشاشة الكاملة"
+                onPress={() => {
+                  const nextVal = !state.fullScreenTap;
+                  dispatch({ type: 'setFullScreenTap', enabled: nextVal });
+                  playHaptic('tap', state.hapticsEnabled);
+                }}
+                style={({ pressed }) => [
+                  styles.dockButton,
+                  styles.dockButtonSpecial,
+                  state.fullScreenTap && styles.dockButtonActive,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.dockIconCircle,
+                    state.fullScreenTap && styles.dockIconCircleActive,
+                  ]}
+                >
+                  <FullScreenIcon
+                    size={19}
+                    color={state.fullScreenTap ? colors.goldLight : colors.text}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.dockLabel,
+                    state.fullScreenTap && styles.dockLabelActive,
+                  ]}
+                >
+                  {state.fullScreenTap ? 'نقر حر مفعل' : 'ملء الشاشة'}
                 </Text>
               </Pressable>
-            </View>
 
-            <View style={styles.controls}>
+              {/* Dhikr Library Shortcut */}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="بدء جديد"
-                accessibilityHint="يطلب تأكيدًا قبل تصفير العداد"
-                accessibilityState={{ disabled: !canUndo }}
-                disabled={!canUndo}
-                onPress={confirmReset}
-                style={({ pressed }) => [styles.control, !canUndo && styles.disabled, pressed && styles.pressed]}
+                accessibilityLabel="مكتبة الأذكار"
+                onPress={() => setOpenModal('dhikrPicker')}
+                style={({ pressed }) => [styles.dockButton, pressed && styles.pressed]}
               >
-                <View style={styles.controlCircle}><ResetIcon /></View>
-                <Text style={styles.controlLabel}>بدء جديد</Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityRole="switch"
-                accessibilityLabel="الاهتزاز"
-                accessibilityState={{ checked: state.hapticsEnabled }}
-                onPress={() => dispatch({ type: 'setHaptics', enabled: !state.hapticsEnabled })}
-                style={({ pressed }) => [styles.control, pressed && styles.pressed]}
-              >
-                <View style={styles.hapticPill}>
-                  <Text style={styles.hapticText}>اهتزاز</Text>
-                  <View style={[styles.miniSwitch, state.hapticsEnabled && styles.miniSwitchOn]}>
-                    <View style={[styles.miniThumb, state.hapticsEnabled && styles.miniThumbOn]} />
-                  </View>
+                <View style={styles.dockIconCircle}>
+                  <BookIcon size={18} color={colors.text} />
                 </View>
-                <Text style={styles.controlLabel}>{state.hapticsEnabled ? 'مفعّل' : 'متوقف'}</Text>
+                <Text style={styles.dockLabel}>الأذكار</Text>
               </Pressable>
 
+              {/* Undo Button */}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="تراجع"
-                accessibilityHint="ينقص العدد واحدًا"
+                accessibilityLabel="تراجع عن العدة الأخيرة"
                 accessibilityState={{ disabled: !canUndo }}
                 disabled={!canUndo}
-                onPress={() => dispatch({ type: 'undo' })}
-                style={({ pressed }) => [styles.control, !canUndo && styles.disabled, pressed && styles.pressed]}
+                onPress={handleUndo}
+                style={({ pressed }) => [
+                  styles.dockButton,
+                  !canUndo && styles.disabled,
+                  pressed && styles.pressed,
+                ]}
               >
-                <View style={styles.controlCircle}><UndoIcon /></View>
-                <Text style={styles.controlLabel}>تراجع</Text>
+                <View style={styles.dockIconCircle}>
+                  <UndoIcon size={18} color={canUndo ? colors.text : colors.textDim} />
+                </View>
+                <Text style={styles.dockLabel}>تراجع</Text>
               </Pressable>
             </View>
-
-            <Text style={styles.privacy}>بياناتك محفوظة على جهازك فقط</Text>
           </ScrollView>
+
+          {/* Full Screen Tap Overlay (Active when fullScreenTap is enabled) */}
+          {state.fullScreenTap && (
+            <Pressable
+              style={styles.fullScreenTapResponder}
+              onPress={handleIncrement}
+              accessibilityLabel="المس للشروع في الذكر"
+            />
+          )}
         </View>
       )}
 
-      <SettingsModal
-        visible={openModal === 'settings'}
-        dhikrId={state.dhikrId}
-        hapticsEnabled={state.hapticsEnabled}
+      {/* Modals & Sheets */}
+      <DhikrPickerModal
+        visible={openModal === 'dhikrPicker'}
+        selectedId={state.dhikrId}
         onClose={() => setOpenModal(null)}
-        onSelectDhikr={(dhikrId) => dispatch({ type: 'setDhikr', dhikrId })}
-        onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
+        onSelect={(option) => dispatch({ type: 'setDhikr', dhikrId: option.id })}
       />
+
       <CustomTargetModal
         visible={openModal === 'customTarget'}
         currentTarget={state.target}
@@ -207,6 +424,23 @@ function CounterScreen() {
           dispatch({ type: 'setTarget', target });
           setOpenModal(null);
         }}
+      />
+
+      <SettingsModal
+        visible={openModal === 'settings'}
+        hapticsEnabled={state.hapticsEnabled}
+        fullScreenTap={state.fullScreenTap}
+        totalSessionCount={state.totalSessionCount}
+        onClose={() => setOpenModal(null)}
+        onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
+        onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
+        onResetStats={() => dispatch({ type: 'resetAll' })}
+      />
+
+      <ResetConfirmModal
+        visible={openModal === 'resetConfirm'}
+        onClose={() => setOpenModal(null)}
+        onConfirm={() => dispatch({ type: 'reset' })}
       />
     </LinearGradient>
   );
@@ -221,121 +455,298 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.backgroundStart },
-  // Layout is always right-to-left, independent of the device language.
-  root: { direction: 'rtl', flex: 1 },
-  halo: {
-    alignSelf: 'center',
-    backgroundColor: colors.gold,
-    borderRadius: 999,
-    height: 420,
-    opacity: 0.05,
-    position: 'absolute',
-    top: '12%',
-    width: 420,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.backgroundStart,
   },
-  header: {
+  root: {
+    direction: 'rtl',
+    flex: 1,
+  },
+  topBar: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    zIndex: 20,
   },
-  appTitle: { color: colors.textSoft, fontSize: 24, fontWeight: '700' },
-  appSubtitle: { color: '#A9BEB4', fontSize: 11, marginTop: 2 },
-  settingsButton: {
+  titleSection: {
+    flexDirection: 'column',
+  },
+  titleRow: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(184,205,189,0.38)',
-    borderRadius: 22,
-    borderWidth: 1,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
+    flexDirection: 'row',
+    gap: 6,
   },
-  content: {
+  appTitle: {
+    color: colors.text,
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  appSubtitle: {
+    color: colors.textDim,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  topActions: {
     alignItems: 'center',
-    flexGrow: 1,
-    gap: 18,
-    justifyContent: 'space-between',
-    paddingBottom: 12,
-    paddingHorizontal: 22,
-    paddingTop: 16,
+    flexDirection: 'row',
+    gap: 8,
   },
-  contentCompact: { gap: 12, paddingTop: 8 },
-  phraseBlock: { alignItems: 'center' },
-  progressPill: {
-    backgroundColor: 'rgba(185,149,84,0.13)',
-    borderColor: 'rgba(214,185,108,0.35)',
-    borderRadius: 16,
+  totalPill: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(210, 230, 218, 0.16)',
+    borderRadius: 18,
     borderWidth: 1,
-    paddingHorizontal: 18,
+    flexDirection: 'row',
+    gap: 5,
+    paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  progressPillText: { color: colors.goldText, fontSize: 12 },
-  phrase: { color: colors.textSoft, fontSize: 18, marginTop: 12, textAlign: 'center' },
-  phraseNote: { color: colors.textDim, fontSize: 11, marginTop: 4, textAlign: 'center' },
-  targetRow: { flexDirection: 'row', gap: 8, maxWidth: 400, width: '100%' },
-  chip: {
+  totalPillLabel: {
+    color: colors.textDim,
+    fontSize: 10.5,
+  },
+  totalPillNumber: {
+    color: colors.goldLight,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  iconButton: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.surfaceBorder,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(210, 230, 218, 0.16)',
     borderRadius: 20,
     borderWidth: 1,
-    flex: 1,
     height: 40,
     justifyContent: 'center',
+    width: 40,
   },
-  chipWide: { flex: 1.2 },
-  chipSelected: { backgroundColor: '#F1D692', borderColor: '#F1D692' },
-  chipText: { color: '#D1DFD2', fontSize: 13 },
-  chipTextSelected: { color: colors.onGold, fontWeight: '700' },
-  controls: {
-    alignItems: 'flex-start',
+  iconButtonActive: {
+    backgroundColor: 'rgba(223, 186, 107, 0.15)',
+    borderColor: colors.goldBadgeBorder,
+  },
+  scrollContent: {
+    alignItems: 'center',
+    flexGrow: 1,
+    gap: 16,
+    justifyContent: 'space-between',
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+  dhikrCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(223, 186, 107, 0.25)',
+    borderRadius: 22,
+    borderWidth: 1.2,
+    maxWidth: 440,
+    padding: 16,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
+    zIndex: 20,
+  },
+  dhikrCardTop: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    maxWidth: 400,
-    paddingHorizontal: 8,
-    width: '100%',
+    marginBottom: 8,
   },
-  control: { alignItems: 'center', minWidth: 72 },
-  controlCircle: {
+  dhikrCategoryBadge: {
+    backgroundColor: colors.goldBadge,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  dhikrCategoryText: {
+    color: colors.goldLight,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  changeDhikrHint: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: 'rgba(182,198,184,0.2)',
-    borderRadius: 23,
-    borderWidth: 1,
-    height: 46,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  changeDhikrText: {
+    color: colors.textDim,
+    fontSize: 11.5,
+  },
+  dhikrPhraseText: {
+    color: colors.text,
+    fontSize: 19,
+    fontWeight: '700',
+    lineHeight: 30,
+    textAlign: 'center',
+  },
+  virtueSnippet: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  virtueSnippetText: {
+    color: colors.textDim,
+    flex: 1,
+    fontSize: 11,
+  },
+  ringSection: {
+    alignItems: 'center',
     justifyContent: 'center',
-    width: 46,
+    marginVertical: 4,
+    position: 'relative',
   },
-  controlLabel: { color: '#91A99B', fontSize: 11, marginTop: 6 },
-  hapticPill: {
+  geometryWrapper: {
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.065)',
-    borderColor: 'rgba(182,198,184,0.2)',
-    borderRadius: 23,
+    justifyContent: 'center',
+    position: 'absolute',
+  },
+  completionBanner: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(223, 186, 107, 0.12)',
+    borderColor: colors.goldBadgeBorder,
+    borderRadius: 18,
     borderWidth: 1,
     flexDirection: 'row',
-    gap: 10,
-    height: 46,
+    justifyContent: 'space-between',
+    maxWidth: 440,
     paddingHorizontal: 16,
+    paddingVertical: 12,
+    width: '100%',
   },
-  hapticText: { color: '#D3E2D5', fontSize: 12 },
-  // Physical row so the thumb slides left→right for "on", like a native switch.
-  miniSwitch: {
-    backgroundColor: colors.track,
-    borderRadius: 9,
-    direction: 'ltr',
-    height: 18,
+  completionInfo: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  completionTitle: {
+    color: colors.goldLight,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  nextCycleButton: {
+    alignItems: 'center',
+    backgroundColor: colors.goldLight,
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  nextCycleText: {
+    color: colors.onGold,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  targetSection: {
+    maxWidth: 440,
+    width: '100%',
+    zIndex: 20,
+  },
+  targetHeaderLabel: {
+    color: colors.textDim,
+    fontSize: 11.5,
+    marginBottom: 8,
+  },
+  targetRow: {
+    flexDirection: 'row',
+    gap: 8,
+    width: '100%',
+  },
+  targetChip: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.045)',
+    borderColor: colors.surfaceBorder,
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 1,
+    height: 42,
     justifyContent: 'center',
-    paddingHorizontal: 3,
-    width: 30,
   },
-  miniSwitchOn: { backgroundColor: colors.green },
-  miniThumb: { backgroundColor: colors.textMuted, borderRadius: 6, height: 12, width: 12 },
-  miniThumbOn: { alignSelf: 'flex-end', backgroundColor: '#F3D88F' },
-  privacy: { color: colors.textFaint, fontSize: 10, textAlign: 'center' },
-  pressed: { opacity: 0.72 },
-  disabled: { opacity: 0.4 },
+  customChip: {
+    flex: 1.3,
+  },
+  targetChipSelected: {
+    backgroundColor: colors.goldBadge,
+    borderColor: colors.goldBadgeBorder,
+  },
+  targetChipText: {
+    color: colors.textMuted,
+    fontSize: 13.5,
+    fontWeight: '600',
+  },
+  targetChipTextSelected: {
+    color: colors.goldText,
+    fontWeight: '800',
+  },
+  bottomDock: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(210, 230, 218, 0.12)',
+    borderRadius: 24,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    maxWidth: 440,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    width: '100%',
+    zIndex: 20,
+  },
+  dockButton: {
+    alignItems: 'center',
+    flex: 1,
+    gap: 5,
+    justifyContent: 'center',
+  },
+  dockButtonSpecial: {
+    flex: 1.2,
+  },
+  dockButtonActive: {},
+  dockIconCircle: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(210, 230, 218, 0.15)',
+    borderRadius: 21,
+    borderWidth: 1,
+    height: 42,
+    justifyContent: 'center',
+    width: 42,
+  },
+  dockIconCircleActive: {
+    backgroundColor: 'rgba(223, 186, 107, 0.18)',
+    borderColor: colors.goldBadgeBorder,
+  },
+  dockLabel: {
+    color: colors.textDim,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  dockLabelActive: {
+    color: colors.goldText,
+    fontWeight: '700',
+  },
+  fullScreenTapResponder: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'transparent',
+    zIndex: 5,
+  },
+  pressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.97 }],
+  },
+  disabled: {
+    opacity: 0.35,
+  },
 });
