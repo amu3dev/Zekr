@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <g transform="translate(0 -42)">
+    <g stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="512" cy="394" r="176" stroke="#5369AD" stroke-width="10" opacity="0.82" />
+      <path d="M512 218v17M688 394h-17M512 570v-17M336 394h17" stroke="#F0CF91" stroke-width="7" opacity="0.9" />
+    </g>
+
+    <g fill="#F0CF91" stroke="#FFE9B9" stroke-width="4">
+      <circle cx="512" cy="218" r="21" />
+      <circle cx="636" cy="270" r="21" />
+      <circle cx="688" cy="394" r="21" />
+      <circle cx="636" cy="518" r="21" />
+      <circle cx="512" cy="570" r="21" />
+      <circle cx="388" cy="518" r="21" />
+      <circle cx="336" cy="394" r="21" />
+      <circle cx="388" cy="270" r="21" />
+    </g>
+
+    <polygon
+      points="512,302 536,350 584,326 560,374 608,394 560,414 584,462 536,438 512,486 488,438 440,462 464,414 416,394 464,374 440,326 488,350"
+      fill="#0B132B"
+      stroke="#F0CF91"
+      stroke-width="8"
+      stroke-linejoin="round"
+    />
+    <circle cx="512" cy="394" r="18" fill="#F0CF91" stroke="#FFE9B9" stroke-width="5" />
+  </g>
+
+  <text
+    x="512"
+    y="748"
+    text-anchor="middle"
+    direction="rtl"
+    unicode-bidi="bidi-override"
+    fill="#F7F3E9"
+    font-family="Geeza Pro, Noto Naskh Arabic, Arial, sans-serif"
+    font-size="112"
+    font-weight="700"
+  >ذِكْر</text>
+</svg>

@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "ذِكر",
+    "name": "ذِكْر",
     "slug": "dhikr-counter",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/launcher-icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0B132B",
     "ios": {
@@ -16,9 +16,9 @@
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#0B132B",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/launcher-foreground.png",
+        "backgroundImage": "./assets/launcher-background.png",
+        "monochromeImage": "./assets/launcher-monochrome.png"
       },
       "blockedPermissions": [
         "android.permission.INTERNET",
@@ -30,6 +30,29 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0B132B",
+          "image": "./assets/splash-lockup.png",
+          "imageWidth": 280,
+          "resizeMode": "contain",
+          "android": {
+            "backgroundColor": "#0B132B",
+            "image": "./assets/splash-symbol.png",
+            "imageWidth": 240,
+            "resizeMode": "contain"
+          },
+          "ios": {
+            "backgroundColor": "#0B132B",
+            "image": "./assets/splash-lockup.png",
+            "imageWidth": 280,
+            "resizeMode": "contain"
+          }
+        }
+      ]
+    ]
   }
 }

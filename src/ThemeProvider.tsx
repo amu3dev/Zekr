@@ -11,14 +11,20 @@ import {
 
 export function ThemeProvider({ children }: PropsWithChildren) {
   const [themeId, setThemeIdState] = useState<ThemeId>(DEFAULT_THEME_ID);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     let active = true;
-    loadThemePreference().then((savedThemeId) => {
-      if (active && savedThemeId && isThemeId(savedThemeId)) {
-        setThemeIdState(savedThemeId);
-      }
-    });
+
+    loadThemePreference()
+      .then((savedThemeId) => {
+        if (active && savedThemeId && isThemeId(savedThemeId)) {
+          setThemeIdState(savedThemeId);
+        }
+      })
+      .finally(() => {
+        if (active) setIsReady(true);
+      });
 
     return () => {
       active = false;
@@ -31,8 +37,8 @@ export function ThemeProvider({ children }: PropsWithChildren) {
   }, []);
 
   const value = useMemo(
-    () => ({ themeId, theme: THEMES[themeId], setThemeId }),
-    [setThemeId, themeId],
+    () => ({ themeId, theme: THEMES[themeId], setThemeId, isReady }),
+    [isReady, setThemeId, themeId],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

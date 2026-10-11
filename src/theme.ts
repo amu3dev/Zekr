@@ -249,6 +249,7 @@ export type ThemeContextValue = {
   themeId: ThemeId;
   theme: ThemeTokens;
   setThemeId: (themeId: ThemeId) => void;
+  isReady: boolean;
 };
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);

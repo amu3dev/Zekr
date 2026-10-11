@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
@@ -48,6 +49,10 @@ import { useTheme } from './src/theme';
 import type { ThemeTokens } from './src/theme';
 import { loadCounterState, saveCounterState } from './src/storage';
 
+// Keep the native Midnight Sapphire launch identity in place until both the
+// persisted theme and the counter state are ready to render the first frame.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
 type OpenModal =
   | 'settings'
   | 'customTarget'
@@ -68,7 +73,7 @@ function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
 }
 
 function CounterScreen() {
-  const { theme } = useTheme();
+  const { isReady: isThemeReady, theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -86,6 +91,12 @@ function CounterScreen() {
       setIsLoaded(true);
     });
   }, []);
+
+  useEffect(() => {
+    if (isLoaded && isThemeReady) {
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [isLoaded, isThemeReady]);
 
   // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps.
   useEffect(() => {
@@ -181,7 +192,7 @@ function CounterScreen() {
             <View style={styles.headerSpacer} />
             <View style={styles.titleSection}>
               <Text style={styles.appTitle} accessibilityRole="header">
-                ذِكر
+                ذِكْر
               </Text>
               <Text style={styles.appSubtitle}>وردك في سكينة</Text>
             </View>

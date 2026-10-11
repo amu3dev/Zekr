@@ -1,8 +1,8 @@
 <div align="center">
 
-  <img src="./assets/icon.png" alt="Zekr Logo" width="120" height="120" style="border-radius: 28px;" />
+  <img src="./assets/launcher-icon.png" alt="Zekr Logo" width="120" height="120" style="border-radius: 28px;" />
 
-  # Zekr — ذِكر
+  # Zekr — ذِكْر
 
   ### A Serene, Privacy-First Islamic Tasbeeh & Dhikr Mobile Companion
   **مسبحة إلكترونية هادئة ورفيق يومي للذكر والسكينة**
@@ -107,7 +107,11 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 ### 🎨 7. Three Complete Visual Identities
 - Switch instantly between Midnight Sapphire, Royal Amethyst, and Soft Ivory from Settings. Each theme coordinates the background, surfaces, ring, beads, controls, typography, borders, and completion feedback, and the selected theme is saved locally.
 
-### 🔒 8. 100% Offline & Absolute Privacy
+### 🌌 8. Intentional Native Launch Experience
+- The production splash uses a stable Midnight Sapphire background with a transparent Tasbeeh/geometric symbol; iOS can show the `ذِكْر` lockup while Android 12+ uses the centered symbol-only treatment required by the system splash API.
+- The native splash is held only until persisted theme and counter state are ready, so the first runtime frame transitions directly into the selected theme without an artificial delay.
+
+### 🔒 9. 100% Offline & Absolute Privacy
 - **Zero Ads, Zero Trackers**: No analytics SDKs, no third-party network calls.
 - **Zero Permissions**: Requires neither internet access nor media/storage permissions.
 - **Local Persistence**: State and preferences are saved locally on your device via `AsyncStorage`.
@@ -142,8 +146,9 @@ For non-native Arabic speakers, here is a guide to the authentic remembrances in
 | **React** | `19.2.3` | Core UI state management |
 | **TypeScript** | `~6.0` | Strict type safety and compilation |
 | **React Native SVG** | `15.15.4` | Sacred geometric art, 33-bead tasbeeh track, and icons |
-| **Expo Linear Gradient** | `~57.0` | Rich celestial emerald and gold gradients |
+| **Expo Linear Gradient** | `~57.0` | Theme-aware background gradients |
 | **Expo Haptics** | `~57.0` | Tactile sensory feedback engine |
+| **Expo Splash Screen** | `~57.0` | Native launch screen configuration and handoff |
 | **AsyncStorage** | `2.2.0` | Unencrypted local offline persistence |
 
 ---
@@ -176,6 +181,8 @@ For non-native Arabic speakers, here is a guide to the authentic remembrances in
    - Scan the **QR Code** in your terminal using the Expo Go app (Android) or the camera app (iOS).
    - Or press `i` to launch the **iOS Simulator**, or `a` to launch the **Android Emulator**.
 
+> Expo Go and development builds do not reproduce the production splash screen. Use a preview or production native build to validate the launch artwork and Android 12 behavior.
+
 ### Quality Checks
 ```bash
 # Run TypeScript strict type verification
@@ -191,7 +198,7 @@ npx expo-doctor
 
 ```
 Zekr/
-├── assets/                       # App icons, splash screens, and adaptive assets
+├── assets/                       # Launcher icons, transparent splash artwork, and adaptive assets
 ├── src/
 │   ├── components/
 │   │   ├── CounterRing.tsx       # Adaptive goal-progress tasbeeh ring & spring animations
