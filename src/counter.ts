@@ -103,6 +103,7 @@ export type CounterState = {
   target: number;
   dhikrId: string;
   hapticsEnabled: boolean;
+  visualEffectsEnabled: boolean;
   cycle: number;
   totalSessionCount: number;
   fullScreenTap: boolean;
@@ -117,6 +118,7 @@ export type CounterAction =
   | { type: 'setTarget'; target: number }
   | { type: 'setDhikr'; dhikrId: string }
   | { type: 'setHaptics'; enabled: boolean }
+  | { type: 'setVisualEffects'; enabled: boolean }
   | { type: 'setFullScreenTap'; enabled: boolean }
   | { type: 'restore'; state: CounterState };
 
@@ -125,6 +127,7 @@ export const initialCounterState: CounterState = {
   target: DHIKR_OPTIONS[0].defaultTarget,
   dhikrId: DHIKR_OPTIONS[0].id,
   hapticsEnabled: true,
+  visualEffectsEnabled: true,
   cycle: 1,
   totalSessionCount: 0,
   fullScreenTap: false,
@@ -194,6 +197,9 @@ export function counterReducer(state: CounterState, action: CounterAction): Coun
     case 'setHaptics': {
       return { ...state, hapticsEnabled: action.enabled };
     }
+    case 'setVisualEffects': {
+      return { ...state, visualEffectsEnabled: action.enabled };
+    }
     case 'setFullScreenTap': {
       return { ...state, fullScreenTap: action.enabled };
     }
@@ -221,6 +227,11 @@ export function sanitizeCounterState(raw: unknown): CounterState {
   const hapticsEnabled =
     typeof data.hapticsEnabled === 'boolean' ? data.hapticsEnabled : fallback.hapticsEnabled;
 
+  const visualEffectsEnabled =
+    typeof data.visualEffectsEnabled === 'boolean'
+      ? data.visualEffectsEnabled
+      : fallback.visualEffectsEnabled;
+
   const cycle =
     typeof data.cycle === 'number' && Number.isInteger(data.cycle) && data.cycle >= 1
       ? data.cycle
@@ -241,6 +252,7 @@ export function sanitizeCounterState(raw: unknown): CounterState {
     target,
     dhikrId,
     hapticsEnabled,
+    visualEffectsEnabled,
     cycle,
     totalSessionCount,
     fullScreenTap,

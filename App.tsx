@@ -17,10 +17,10 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 
 import { toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
+import { FreeTapMode } from './src/components/FreeTapMode';
 import {
   BookIcon,
   ChevronDownIcon,
-  CloseIcon,
   FullScreenIcon,
   MenuIcon,
   NextCycleIcon,
@@ -412,42 +412,18 @@ function CounterScreen() {
           </ScrollView>
 
           {state.fullScreenTap ? (
-            <View accessibilityViewIsModal style={styles.freeTapOverlay}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`النقر الحر لعدّاد ${dhikr.title}`}
-                accessibilityHint="اضغط لزيادة العدّاد، واستخدم زر إنهاء الوضع للعودة"
-                accessibilityValue={{ text: `${toArabicDigits(state.count)} من ${toArabicDigits(state.target)}` }}
-                onPress={handleIncrement}
-                style={({ pressed }) => [styles.freeTapSurface, pressed && styles.freeTapSurfacePressed]}
-              />
-
-              <View pointerEvents="box-none" style={styles.freeTapHud}>
-                <View pointerEvents="none" style={styles.freeTapStatus}>
-                  <Text style={styles.freeTapEyebrow}>النقر الحر مفعل</Text>
-                  <Text style={styles.freeTapCount}>{toArabicDigits(state.count)}</Text>
-                  <Text style={styles.freeTapTarget}>
-                    من {toArabicDigits(state.target)} · {dhikr.title}
-                  </Text>
-                  <Text style={styles.freeTapHint}>المس أي مكان لزيادة العدّ</Text>
-                </View>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="إنهاء وضع النقر الحر"
-                  hitSlop={8}
-                  onPress={handleExitFullScreenTap}
-                  style={({ pressed }) => [
-                    styles.freeTapExitButton,
-                    { bottom: insets.bottom + 22 },
-                    pressed && styles.pressed,
-                  ]}
-                >
-                  <CloseIcon size={15} color={theme.warm} />
-                  <Text style={styles.freeTapExitText}>إنهاء الوضع</Text>
-                </Pressable>
-              </View>
-            </View>
+            <FreeTapMode
+              bottomInset={insets.bottom}
+              count={state.count}
+              cycle={state.cycle}
+              dhikr={dhikr}
+              effectsEnabled={state.visualEffectsEnabled}
+              onExit={handleExitFullScreenTap}
+              onNextCycle={handleNextCycle}
+              onTap={handleIncrement}
+              target={state.target}
+              topInset={insets.top}
+            />
           ) : null}
         </View>
       )}
@@ -472,10 +448,12 @@ function CounterScreen() {
       <SettingsModal
         visible={openModal === 'settings'}
         hapticsEnabled={state.hapticsEnabled}
+        visualEffectsEnabled={state.visualEffectsEnabled}
         fullScreenTap={state.fullScreenTap}
         totalSessionCount={state.totalSessionCount}
         onClose={() => setOpenModal(null)}
         onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
+        onToggleVisualEffects={(enabled) => dispatch({ type: 'setVisualEffects', enabled })}
         onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
         onResetStats={() => setOpenModal('resetStatsConfirm')}
       />
@@ -832,75 +810,6 @@ function createStyles(theme: ThemeTokens) {
       color: theme.textFaint,
       fontSize: 10.5,
       textAlign: 'center',
-    },
-    freeTapOverlay: {
-      ...StyleSheet.absoluteFill,
-      backgroundColor: theme.background,
-      zIndex: 100,
-    },
-    freeTapSurface: {
-      ...StyleSheet.absoluteFill,
-    },
-    freeTapSurfacePressed: {
-      backgroundColor: theme.warmSurface,
-    },
-    freeTapHud: {
-      ...StyleSheet.absoluteFill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 24,
-    },
-    freeTapStatus: {
-      alignItems: 'center',
-    },
-    freeTapEyebrow: {
-      color: theme.warm,
-      fontSize: 14,
-      fontWeight: '700',
-      letterSpacing: 0.5,
-      marginBottom: 16,
-    },
-    freeTapCount: {
-      color: theme.warm,
-      fontSize: 92,
-      fontWeight: '300',
-      letterSpacing: -2,
-      lineHeight: 110,
-      ...Platform.select({
-        ios: {
-          textShadowColor: theme.warmSurface,
-          textShadowOffset: { width: 0, height: 2 },
-          textShadowRadius: 16,
-        },
-        android: {},
-      }),
-    },
-    freeTapTarget: {
-      color: theme.textMuted,
-      fontSize: 14.5,
-      marginTop: 4,
-    },
-    freeTapHint: {
-      color: theme.textDim,
-      fontSize: 12,
-      marginTop: 26,
-    },
-    freeTapExitButton: {
-      alignItems: 'center',
-      backgroundColor: theme.surfaceSoft,
-      borderColor: theme.surfaceBorder,
-      borderRadius: 22,
-      borderWidth: 1,
-      flexDirection: 'row',
-      gap: 7,
-      paddingHorizontal: 20,
-      paddingVertical: 11,
-      position: 'absolute',
-    },
-    freeTapExitText: {
-      color: theme.warm,
-      fontSize: 13,
-      fontWeight: '700',
     },
     pressed: {
       opacity: 0.72,

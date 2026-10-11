@@ -11,6 +11,7 @@ import {
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { getCycleText, toArabicDigits } from '../arabic';
+import { getActiveBeadCount, TOTAL_BEADS } from '../beads';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
 
@@ -21,7 +22,6 @@ const RADIUS = 113;
 const STROKE = 8;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const BEAD_RADIUS = 139;
-const TOTAL_BEADS = 36;
 const BEAD_SIZE = 7.2;
 
 type Props = {
@@ -142,10 +142,9 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
     onPress();
   };
 
-  // The beads are a compact, scalable view of the selected goal. The exact
-  // count remains in the animated arc and center label, while the 36 beads
-  // stay legible for both 33 and 1000-count goals.
-  const activeBeads = count === 0 ? 0 : Math.min(TOTAL_BEADS, Math.ceil(progress * TOTAL_BEADS));
+  // The bead loop is always 33 taps; the goal arc remains an independent view
+  // of progress toward the selected target.
+  const activeBeads = getActiveBeadCount(count);
   const beads = Array.from({ length: TOTAL_BEADS }, (_, id) => {
     const beadAngle = (id / TOTAL_BEADS) * 2 * Math.PI - Math.PI / 2;
     return {

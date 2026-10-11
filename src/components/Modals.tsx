@@ -233,15 +233,25 @@ const TARGET_PRESETS = [33, 99, 100, 300, 500, 1000];
 
 export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: CustomTargetProps) {
   const styles = useModalStyles();
-  const [prevTarget, setPrevTarget] = useState(currentTarget);
+  const [previouslyVisible, setPreviouslyVisible] = useState(visible);
+  const [previousTarget, setPreviousTarget] = useState(currentTarget);
   const [text, setText] = useState(() => toArabicDigits(currentTarget));
   const [error, setError] = useState<string | null>(null);
 
-  if (currentTarget !== prevTarget) {
-    setPrevTarget(currentTarget);
+  if (visible !== previouslyVisible || (visible && currentTarget !== previousTarget)) {
+    setPreviouslyVisible(visible);
+    if (currentTarget !== previousTarget) setPreviousTarget(currentTarget);
+    if (visible) {
+      setText(toArabicDigits(currentTarget));
+      setError(null);
+    }
+  }
+
+  const handleClose = () => {
     setText(toArabicDigits(currentTarget));
     setError(null);
-  }
+    onClose();
+  };
 
   const handleSave = (targetValue?: number) => {
     const rawVal = targetValue !== undefined ? targetValue : Number(normalizeDigits(text).trim());
@@ -257,7 +267,7 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
       visible={visible}
       title="تحديد الهدف"
       subtitle={`الهدف الحالي: ${toArabicDigits(currentTarget)} عدّة`}
-      onClose={onClose}
+      onClose={handleClose}
     >
       <View style={styles.quickPresetsRow}>
         {TARGET_PRESETS.map((preset) => {
@@ -310,7 +320,7 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
 
       <View style={styles.actions}>
         <ActionButton label="حفظ الهدف" variant="primary" onPress={() => handleSave()} />
-        <ActionButton label="إلغاء" variant="secondary" onPress={onClose} />
+        <ActionButton label="إلغاء" variant="secondary" onPress={handleClose} />
       </View>
     </ModalShell>
   );
@@ -323,10 +333,12 @@ export function CustomTargetModal({ visible, currentTarget, onClose, onSave }: C
 type SettingsProps = {
   visible: boolean;
   hapticsEnabled: boolean;
+  visualEffectsEnabled: boolean;
   fullScreenTap: boolean;
   totalSessionCount: number;
   onClose: () => void;
   onToggleHaptics: (enabled: boolean) => void;
+  onToggleVisualEffects: (enabled: boolean) => void;
   onToggleFullScreenTap: (enabled: boolean) => void;
   onResetStats: () => void;
 };
@@ -395,10 +407,12 @@ function ThemePreviewCard({
 export function SettingsModal({
   visible,
   hapticsEnabled,
+  visualEffectsEnabled,
   fullScreenTap,
   totalSessionCount,
   onClose,
   onToggleHaptics,
+  onToggleVisualEffects,
   onToggleFullScreenTap,
   onResetStats,
 }: SettingsProps) {
@@ -441,10 +455,28 @@ export function SettingsModal({
             <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
           </View>
           <Switch
+            accessibilityLabel="الاهتزاز اللمسي"
             value={hapticsEnabled}
             onValueChange={onToggleHaptics}
             trackColor={{ false: theme.track, true: theme.accent }}
             thumbColor={hapticsEnabled ? theme.warm : theme.textMuted}
+          />
+        </View>
+
+        <View style={styles.settingItem}>
+          <View style={styles.settingItemIconWrap}>
+            <SparkleIcon size={20} color={theme.iconAccent} />
+          </View>
+          <View style={styles.settingCopy}>
+            <Text style={styles.settingTitle}>مؤثرات النقر الحر</Text>
+            <Text style={styles.settingDesc}>نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر</Text>
+          </View>
+          <Switch
+            accessibilityLabel="مؤثرات النقر الحر"
+            value={visualEffectsEnabled}
+            onValueChange={onToggleVisualEffects}
+            trackColor={{ false: theme.track, true: theme.accent }}
+            thumbColor={visualEffectsEnabled ? theme.warm : theme.textMuted}
           />
         </View>
 
@@ -457,6 +489,7 @@ export function SettingsModal({
             <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
           </View>
           <Switch
+            accessibilityLabel="النقر في كامل الشاشة"
             value={fullScreenTap}
             onValueChange={onToggleFullScreenTap}
             trackColor={{ false: theme.track, true: theme.accent }}
