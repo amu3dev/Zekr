@@ -12,6 +12,7 @@
   </p>
 
   <p align="center">
+    <a href="#-معاينة-التطبيق">معاينة التطبيق</a> •
     <a href="#-عن-تطبيق-ذكر">عن التطبيق</a> •
     <a href="#-أبرز-المزايا">أبرز المزايا</a> •
     <a href="#-مكتبة-الأذكار-وفضائلها-المأثورة">مكتبة الأذكار والفضائل</a> •
@@ -35,6 +36,32 @@
 > 🌍 **اختر لغة القراءة:**
 > - [**العربية (Arabic)**](./README.ar.md) (الصفحة الحالية)
 > - [**English (الإنجليزية)**](./README.md)
+
+---
+
+## 📱 معاينة التطبيق
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./assets/screenshots/screen-main.png" width="240" alt="شاشة التسبيح الرئيسية" style="border-radius: 18px;" />
+        <br />
+        <sub><b>حلقة التسبيح وحبات المسبحة</b><br />Main Tasbeeh Ring</sub>
+      </td>
+      <td align="center">
+        <img src="./assets/screenshots/screen-library.png" width="240" alt="مكتبة الأذكار وفضائلها" style="border-radius: 18px;" />
+        <br />
+        <sub><b>مكتبة الأذكار وفضائلها</b><br />Dhikr Library & Virtues</sub>
+      </td>
+      <td align="center">
+        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="وضع النقر في كامل الشاشة" style="border-radius: 18px;" />
+        <br />
+        <sub><b>وضع النقر في كامل الشاشة</b><br />Eyes-Free Tap HUD</sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 

@@ -12,6 +12,7 @@
   </p>
 
   <p align="center">
+    <a href="#-app-preview">App Preview</a> •
     <a href="#-about-zekr">About</a> •
     <a href="#-key-features">Key Features</a> •
     <a href="#-dhikr-library--meanings">Dhikr Library & Meanings</a> •
@@ -35,6 +36,32 @@
 > 🌍 **Language Selection:**
 > - [**English**](./README.md) (Current)
 > - [**العربية (Arabic)**](./README.ar.md)
+
+---
+
+## 📱 App Preview
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./assets/screenshots/screen-main.png" width="240" alt="Main Tasbeeh Screen" style="border-radius: 18px;" />
+        <br />
+        <sub><b>Main Tasbeeh Ring</b><br />حلقة التسبيح وحبات المسبحة</sub>
+      </td>
+      <td align="center">
+        <img src="./assets/screenshots/screen-library.png" width="240" alt="Dhikr Library & Virtues" style="border-radius: 18px;" />
+        <br />
+        <sub><b>Dhikr Library & Virtues</b><br />مكتبة الأذكار وفضائلها</sub>
+      </td>
+      <td align="center">
+        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="Eyes-Free Tap HUD" style="border-radius: 18px;" />
+        <br />
+        <sub><b>Eyes-Free Tap HUD</b><br />وضع النقر في كامل الشاشة</sub>
+      </td>
+    </tr>
+  </table>
+</div>
 
 ---
 
