@@ -98,13 +98,15 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
     onPress();
   };
 
-  // Generate 33 spherical bead coordinates around the perimeter
+  // Generate 33 spherical bead coordinates around the perimeter.
+  // Beads illuminate 1-by-1 with each tap in a 33-count loop like a physical misbaha.
+  const activeBeadsInLoop = count === 0 ? 0 : ((count - 1) % TOTAL_BEADS) + 1;
   const beads = [];
   for (let i = 0; i < TOTAL_BEADS; i++) {
     const beadAngle = (i / TOTAL_BEADS) * 2 * Math.PI - Math.PI / 2;
     const bx = CENTER + BEAD_RADIUS * Math.cos(beadAngle);
     const by = CENTER + BEAD_RADIUS * Math.sin(beadAngle);
-    const isBeadActive = progress >= (i + 1) / TOTAL_BEADS;
+    const isBeadActive = count > 0 && i < activeBeadsInLoop;
     beads.push({ id: i, bx, by, isBeadActive });
   }
 

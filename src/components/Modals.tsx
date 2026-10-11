@@ -168,7 +168,6 @@ export function DhikrPickerModal({ visible, selectedId, onClose, onSelect }: Dhi
               accessibilityState={{ checked: isSelected }}
               onPress={() => {
                 onSelect(item);
-                onClose();
               }}
               style={({ pressed }) => [
                 styles.dhikrCard,

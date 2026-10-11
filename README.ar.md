@@ -39,25 +39,28 @@
 
 ---
 
-## 📱 معاينة التطبيق
+## 🎨 الرؤية التصميمية والمعاينة الفنية (Design Preview)
+
+> [!NOTE]
+> الصور أدناه تمثل التصميمات المرجعية والرؤية الفنية (Design Previews & Concept Mockups) التي توجّه الهوية البصرية للتطبيق. يُترجم التطبيق هذه المفاهيم في بيئة التشغيل الفعلية عبر رسوميات SVG المتجهة وخطوط النظام المعتمدة وتخطيطات متجاوبة.
 
 <div align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="./assets/screenshots/screen-main.png" width="240" alt="شاشة التسبيح الرئيسية" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-main.png" width="240" alt="شاشة التسبيح الرئيسية (معاينة تصميمية)" style="border-radius: 18px;" />
         <br />
-        <sub><b>حلقة التسبيح وحبات المسبحة</b><br />Main Tasbeeh Ring</sub>
+        <sub><b>حلقة التسبيح وحبات المسبحة (معاينة تصميمية)</b><br />Main Tasbeeh Ring (Design Preview)</sub>
       </td>
       <td align="center">
-        <img src="./assets/screenshots/screen-library.png" width="240" alt="مكتبة الأذكار وفضائلها" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-library.png" width="240" alt="مكتبة الأذكار وفضائلها (معاينة تصميمية)" style="border-radius: 18px;" />
         <br />
-        <sub><b>مكتبة الأذكار وفضائلها</b><br />Dhikr Library & Virtues</sub>
+        <sub><b>مكتبة الأذكار وفضائلها (معاينة تصميمية)</b><br />Dhikr Library & Virtues (Design Preview)</sub>
       </td>
       <td align="center">
-        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="وضع النقر في كامل الشاشة" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="وضع النقر في كامل الشاشة (معاينة تصميمية)" style="border-radius: 18px;" />
         <br />
-        <sub><b>وضع النقر في كامل الشاشة</b><br />Eyes-Free Tap HUD</sub>
+        <sub><b>وضع النقر في كامل الشاشة (معاينة تصميمية)</b><br />Eyes-Free Tap HUD (Design Preview)</sub>
       </td>
     </tr>
   </table>
@@ -78,7 +81,7 @@
 ## ✨ أبرز المزايا
 
 ### 📿 ١. حلقة تسبيح تفاعلية مع ٣٣ حبة مسبحة ضوئية
-- **حبات المسبحة الإلكترونية (33 Luminous Beads)**: حلقة محيطية مكونة من ٣٣ حبة تستلهم المسبحة التقليدية؛ تُضاء الحبات تباعًا باللون الذهبي الملكي مع كل تسبيحة.
+- **حبات المسبحة الإلكترونية (33 Luminous Beads)**: حلقة محيطية مكونة من ٣٣ حبة تستلهم المسبحة التقليدية؛ تُضاء الحبات تباعًا حبة بحبة مع كل تسبيحة (في دورة مسبحة من ٣٣ تسبيحة)، بينما يعكس القوس الذهبي الداخلي نسبة إنجاز الهدف الكلي.
 - **تفاعل لمسي حركي (Micro-Animations)**: ارتداد فيزيائي سلس عند الضغط (`Animated.spring`) مع موجة ضوئية رقيقة وقفزة في رقم العداد.
 - **احتفال الختم والتمام**: نبض ضوئي هادئ وتنبيه اهتزازي لطيف عند بلوغ الهدف المطلوب مع إمكانية بدء الدورة التالية بنقرة واحدة.
 

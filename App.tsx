@@ -46,7 +46,7 @@ import {
 import { loadCounterState, saveCounterState } from './src/storage';
 import { colors } from './src/theme';
 
-type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | null;
+type OpenModal = 'settings' | 'customTarget' | 'dhikrPicker' | 'resetConfirm' | 'resetStatsConfirm' | null;
 
 function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
   if (!enabled) return;
@@ -124,12 +124,16 @@ function CounterScreen() {
   };
 
   const handleSelectDhikr = (option: DhikrOption) => {
-    if (option.id === state.dhikrId) return;
+    if (option.id === state.dhikrId) {
+      setOpenModal(null);
+      return;
+    }
     if (state.count > 0) {
       setPendingDhikr(option);
       setOpenModal('resetConfirm');
     } else {
       dispatch({ type: 'setDhikr', dhikrId: option.id });
+      setOpenModal(null);
     }
   };
 
@@ -161,7 +165,11 @@ function CounterScreen() {
       {isLoaded && (
         <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
           {/* Top Bar Header (Matching Mockup: Menu Icon, Glowing Title, Dual-Line Pill) */}
-          <View style={styles.topBar}>
+          <View
+            accessibilityElementsHidden={state.fullScreenTap}
+            importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
+            style={styles.topBar}
+          >
             {/* Left Frosted Menu Button */}
             <Pressable
               accessibilityRole="button"
@@ -423,7 +431,10 @@ function CounterScreen() {
 
           {/* Full Screen Free Tap Mode HUD Overlay (Matching Mockup screen-freetap.png) */}
           {state.fullScreenTap ? (
-            <View style={styles.freeTapOverlay}>
+            <View
+              accessibilityViewIsModal={true}
+              style={styles.freeTapOverlay}
+            >
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`النقر الحر لعدّاد ${dhikr.title}`}
@@ -494,7 +505,20 @@ function CounterScreen() {
         onClose={() => setOpenModal(null)}
         onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
         onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
-        onResetStats={() => dispatch({ type: 'resetAll' })}
+        onResetStats={() => setOpenModal('resetStatsConfirm')}
+      />
+
+      <ConfirmModal
+        visible={openModal === 'resetStatsConfirm'}
+        title="تصفير الإحصائيات"
+        message="سيؤدي هذا الإجراء إلى حذف إجمالي التسبيحات والعداد نهائيًا. هل تريد المتابعة؟"
+        confirmLabel="نعم، حذف وتصفير"
+        onClose={() => setOpenModal('settings')}
+        onConfirm={() => {
+          dispatch({ type: 'resetAll' });
+          playHaptic('warning', state.hapticsEnabled);
+          setOpenModal('settings');
+        }}
       />
 
       <ConfirmModal

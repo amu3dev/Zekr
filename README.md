@@ -39,25 +39,28 @@
 
 ---
 
-## 📱 App Preview
+## 🎨 Design Preview
+
+> [!NOTE]
+> The mockups below illustrate the design reference and visual vision for Zekr. The live React Native/Expo application implements these aesthetics through native vector SVG geometry, system typography, and responsive controls.
 
 <div align="center">
   <table>
     <tr>
       <td align="center">
-        <img src="./assets/screenshots/screen-main.png" width="240" alt="Main Tasbeeh Screen" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-main.png" width="240" alt="Main Tasbeeh Screen (Design Preview)" style="border-radius: 18px;" />
         <br />
-        <sub><b>Main Tasbeeh Ring</b><br />حلقة التسبيح وحبات المسبحة</sub>
+        <sub><b>Main Tasbeeh Ring (Design Preview)</b><br />حلقة التسبيح وحبات المسبحة</sub>
       </td>
       <td align="center">
-        <img src="./assets/screenshots/screen-library.png" width="240" alt="Dhikr Library & Virtues" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-library.png" width="240" alt="Dhikr Library & Virtues (Design Preview)" style="border-radius: 18px;" />
         <br />
-        <sub><b>Dhikr Library & Virtues</b><br />مكتبة الأذكار وفضائلها</sub>
+        <sub><b>Dhikr Library & Virtues (Design Preview)</b><br />مكتبة الأذكار وفضائلها</sub>
       </td>
       <td align="center">
-        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="Eyes-Free Tap HUD" style="border-radius: 18px;" />
+        <img src="./assets/screenshots/screen-freetap.png" width="240" alt="Eyes-Free Tap HUD (Design Preview)" style="border-radius: 18px;" />
         <br />
-        <sub><b>Eyes-Free Tap HUD</b><br />وضع النقر في كامل الشاشة</sub>
+        <sub><b>Eyes-Free Tap HUD (Design Preview)</b><br />وضع النقر في كامل الشاشة</sub>
       </td>
     </tr>
   </table>
@@ -78,7 +81,7 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 ## ✨ Key Features
 
 ### 📿 1. Interactive 33-Bead Luminous Tasbeeh Ring
-- **Physical Prayer Bead Ring**: An outer track of 33 luminous beads inspired by traditional misbaha prayer beads. Each bead illuminates in imperial gold as your count progresses.
+- **Physical Prayer Bead Ring**: An outer track of 33 luminous beads inspired by traditional misbaha prayer beads. Each bead illuminates in imperial gold with each individual tap (cycling every 33 counts like a traditional misbaha loop), while the inner golden arc reflects overall target completion.
 - **Micro-Animations & Physics**: Fluid spring recoil (`Animated.spring`) on touch, radiating light-wave ripples, and bouncy number pop on every increment.
 - **Target Completion Flourish**: Soft rhythmic pulse animation and subtle success haptic vibration upon completing your goal.
 
