@@ -188,6 +188,12 @@ For non-native Arabic speakers, here is a guide to the authentic remembrances in
 # Run TypeScript strict type verification
 npx tsc --noEmit
 
+# Run lint rules
+npm run lint
+
+# Run counter-regression tests
+npm test
+
 # Run Expo project configuration and health diagnostics
 npx expo-doctor
 ```

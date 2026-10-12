@@ -450,12 +450,17 @@ export function SettingsModal({
           <View style={styles.settingItemIconWrap}>
             <VibrateIcon size={20} color={theme.iconAccent} />
           </View>
-          <View style={styles.settingCopy}>
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.settingCopy}
+          >
             <Text style={styles.settingTitle}>الاهتزاز اللمسي</Text>
             <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
           </View>
           <Switch
             accessibilityLabel="الاهتزاز اللمسي"
+            accessibilityHint="نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف"
             value={hapticsEnabled}
             onValueChange={onToggleHaptics}
             trackColor={{ false: theme.track, true: theme.accent }}
@@ -467,12 +472,17 @@ export function SettingsModal({
           <View style={styles.settingItemIconWrap}>
             <SparkleIcon size={20} color={theme.iconAccent} />
           </View>
-          <View style={styles.settingCopy}>
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.settingCopy}
+          >
             <Text style={styles.settingTitle}>مؤثرات النقر الحر</Text>
             <Text style={styles.settingDesc}>نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر</Text>
           </View>
           <Switch
             accessibilityLabel="مؤثرات النقر الحر"
+            accessibilityHint="نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر"
             value={visualEffectsEnabled}
             onValueChange={onToggleVisualEffects}
             trackColor={{ false: theme.track, true: theme.accent }}
@@ -484,12 +494,17 @@ export function SettingsModal({
           <View style={styles.settingItemIconWrap}>
             <FullScreenIcon size={20} color={theme.iconAccent} />
           </View>
-          <View style={styles.settingCopy}>
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.settingCopy}
+          >
             <Text style={styles.settingTitle}>النقر في كامل الشاشة</Text>
             <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
           </View>
           <Switch
             accessibilityLabel="النقر في كامل الشاشة"
+            accessibilityHint="المس أي مكان بالشاشة لزيادة العدّ دون النظر"
             value={fullScreenTap}
             onValueChange={onToggleFullScreenTap}
             trackColor={{ false: theme.track, true: theme.accent }}

@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate:
-    name: Typecheck & Environment Check
+    name: Typecheck, Tests & Environment Check
     runs-on: ubuntu-latest
 
     steps:
@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22.13.0
           cache: 'npm'
 
       - name: Install Dependencies
@@ -29,6 +29,9 @@ jobs:
 
       - name: ESLint Check
         run: npx expo lint
+
+      - name: Regression Tests
+        run: npm test
 
       - name: Expo Doctor Check
         run: npx expo-doctor
