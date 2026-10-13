@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   AppState,
   Platform,
@@ -40,6 +40,7 @@ import {
 } from './src/components/Modals';
 import {
   counterReducer,
+  type CounterAction,
   DhikrOption,
   getDhikr,
   initialCounterState,
@@ -83,19 +84,35 @@ function CounterScreen() {
   const [state, dispatch] = useReducer(counterReducer, initialCounterState);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isHomeLaidOut, setIsHomeLaidOut] = useState(false);
-  const [launchDismissed, setLaunchDismissed] = useState(false);
+  const [launchVisible, setLaunchVisible] = useState(true);
+  const finishLaunch = useCallback(() => setLaunchVisible(false), []);
+  const nativeHidden = useRef(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
   const stateRef = useRef(state);
-  stateRef.current = state;
+  // Track queued actions with the same reducer, so feedback and background
+  // flushes see every tap even before React commits a batch.
+  const dispatchCounter = useCallback((action: CounterAction) => {
+    const next = counterReducer(stateRef.current, action);
+    stateRef.current = next;
+    dispatch(action);
+    return next;
+  }, []);
 
   useEffect(() => {
     loadCounterState().then((saved) => {
-      if (saved) dispatch({ type: 'restore', state: saved });
+      if (saved) dispatchCounter({ type: 'restore', state: saved });
       setIsLoaded(true);
     });
-  }, []);
+  }, [dispatchCounter]);
+
+  useEffect(() => {
+    if (isLoaded && isThemeReady && isHomeLaidOut && !nativeHidden.current) {
+      nativeHidden.current = true;
+      SplashScreen.hideAsync().catch(() => undefined);
+    }
+  }, [isHomeLaidOut, isLoaded, isThemeReady]);
 
   // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps.
   useEffect(() => {
@@ -125,19 +142,18 @@ function CounterScreen() {
   const canUndo = state.count > 0;
 
   const handleIncrement = () => {
-    const nextCount = state.count + 1;
-    dispatch({ type: 'increment' });
-    playHaptic(nextCount === state.target ? 'success' : 'tap', state.hapticsEnabled);
+    const next = dispatchCounter({ type: 'increment' });
+    playHaptic(next.count === next.target ? 'success' : 'tap', next.hapticsEnabled);
   };
 
   const handleUndo = () => {
     if (!canUndo) return;
-    dispatch({ type: 'undo' });
+    dispatchCounter({ type: 'undo' });
     playHaptic('tap', state.hapticsEnabled);
   };
 
   const handleNextCycle = () => {
-    dispatch({ type: 'nextCycle' });
+    dispatchCounter({ type: 'nextCycle' });
     playHaptic('success', state.hapticsEnabled);
   };
 
@@ -150,23 +166,23 @@ function CounterScreen() {
       setPendingDhikr(option);
       setOpenModal('resetConfirm');
     } else {
-      dispatch({ type: 'setDhikr', dhikrId: option.id });
+      dispatchCounter({ type: 'setDhikr', dhikrId: option.id });
       setOpenModal(null);
     }
   };
 
   const handleConfirmReset = () => {
     if (pendingDhikr) {
-      dispatch({ type: 'setDhikr', dhikrId: pendingDhikr.id });
+      dispatchCounter({ type: 'setDhikr', dhikrId: pendingDhikr.id });
       setPendingDhikr(null);
     } else {
-      dispatch({ type: 'reset' });
+      dispatchCounter({ type: 'reset' });
     }
     setOpenModal(null);
   };
 
   const handleExitFullScreenTap = () => {
-    dispatch({ type: 'setFullScreenTap', enabled: false });
+    dispatchCounter({ type: 'setFullScreenTap', enabled: false });
     playHaptic('tap', state.hapticsEnabled);
   };
 
@@ -177,15 +193,14 @@ function CounterScreen() {
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={styles.screen}
-      onTouchStart={() => {
-        if (isLoaded && isThemeReady) setLaunchDismissed(true);
-      }}
     >
       <StatusBar style={theme.statusBarStyle} />
       <View pointerEvents="none" style={styles.backgroundOrb} />
 
       {isLoaded && isThemeReady && (
         <View
+          accessibilityElementsHidden={launchVisible}
+          importantForAccessibility={launchVisible ? 'no-hide-descendants' : 'auto'}
           onLayout={() => setIsHomeLaidOut(true)}
           style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         >
@@ -306,7 +321,7 @@ function CounterScreen() {
                         accessibilityLabel={`الهدف ${toArabicDigits(target)}`}
                         accessibilityState={{ checked: isSelected }}
                         onPress={() => {
-                          dispatch({ type: 'setTarget', target });
+                          dispatchCounter({ type: 'setTarget', target });
                           playHaptic('tap', state.hapticsEnabled);
                         }}
                         style={({ pressed }) => [
@@ -390,7 +405,7 @@ function CounterScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="النقر الحر"
                   onPress={() => {
-                    dispatch({ type: 'setFullScreenTap', enabled: true });
+                    dispatchCounter({ type: 'setFullScreenTap', enabled: true });
                     playHaptic('tap', state.hapticsEnabled);
                   }}
                   style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
@@ -445,7 +460,7 @@ function CounterScreen() {
         currentTarget={state.target}
         onClose={() => setOpenModal(null)}
         onSave={(target) => {
-          dispatch({ type: 'setTarget', target });
+          dispatchCounter({ type: 'setTarget', target });
           setOpenModal(null);
         }}
       />
@@ -457,9 +472,9 @@ function CounterScreen() {
         fullScreenTap={state.fullScreenTap}
         totalSessionCount={state.totalSessionCount}
         onClose={() => setOpenModal(null)}
-        onToggleHaptics={(enabled) => dispatch({ type: 'setHaptics', enabled })}
-        onToggleVisualEffects={(enabled) => dispatch({ type: 'setVisualEffects', enabled })}
-        onToggleFullScreenTap={(enabled) => dispatch({ type: 'setFullScreenTap', enabled })}
+        onToggleHaptics={(enabled) => dispatchCounter({ type: 'setHaptics', enabled })}
+        onToggleVisualEffects={(enabled) => dispatchCounter({ type: 'setVisualEffects', enabled })}
+        onToggleFullScreenTap={(enabled) => dispatchCounter({ type: 'setFullScreenTap', enabled })}
         onResetStats={() => setOpenModal('resetStatsConfirm')}
       />
 
@@ -470,7 +485,7 @@ function CounterScreen() {
         confirmLabel="نعم، حذف وتصفير"
         onClose={() => setOpenModal('settings')}
         onConfirm={() => {
-          dispatch({ type: 'resetAll' });
+          dispatchCounter({ type: 'resetAll' });
           playHaptic('warning', state.hapticsEnabled);
           setOpenModal('settings');
         }}
@@ -491,10 +506,12 @@ function CounterScreen() {
         }}
         onConfirm={handleConfirmReset}
       />
-      <LaunchExperience
-        ready={isLoaded && isThemeReady && isHomeLaidOut}
-        dismissed={launchDismissed}
-      />
+      {launchVisible && (
+        <LaunchExperience
+          ready={isLoaded && isThemeReady && isHomeLaidOut}
+          onFinish={finishLaunch}
+        />
+      )}
     </LinearGradient>
   );
 }

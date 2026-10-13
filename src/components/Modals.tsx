@@ -552,10 +552,7 @@ export function ConfirmModal({
         <ActionButton
           label={confirmLabel}
           variant="danger"
-          onPress={() => {
-            onConfirm();
-            onClose();
-          }}
+          onPress={onConfirm}
         />
         <ActionButton label={cancelLabel} variant="secondary" onPress={onClose} />
       </View>

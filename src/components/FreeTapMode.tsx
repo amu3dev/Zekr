@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AccessibilityInfo,
   Animated,
   Pressable,
   StyleSheet,
@@ -10,7 +9,8 @@ import {
 } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
-import { toArabicDigits } from '../arabic';
+import { getCycleText, toArabicDigits } from '../arabic';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { DhikrOption } from '../counter';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
@@ -35,24 +35,6 @@ type Props = {
   onExit: () => void;
 };
 
-function useReducedMotion() {
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (active) setReduceMotion(enabled);
-    });
-
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return reduceMotion;
-}
 
 function getPhraseStyle(phraseLength: number) {
   if (phraseLength > 180) return { fontSize: 15.5, lineHeight: 25 };
@@ -76,7 +58,7 @@ export function FreeTapMode({
   const { height, width } = useWindowDimensions();
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() !== false;
   const [rippleAnim] = useState(() => new Animated.Value(0));
   const [countPulse] = useState(() => new Animated.Value(1));
 
@@ -260,7 +242,7 @@ export function FreeTapMode({
                 {toArabicDigits(count)} <Text style={styles.progressSeparator}>من</Text>{' '}
                 {toArabicDigits(target)}
               </Text>
-              <Text style={styles.cycleText}>الدورة {toArabicDigits(cycle)}</Text>
+              <Text style={styles.cycleText}>{getCycleText(cycle)}</Text>
             </Animated.View>
           </View>
         </View>

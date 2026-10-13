@@ -108,8 +108,8 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 - Switch instantly between Midnight Sapphire, Royal Amethyst, and Soft Ivory from Settings. Each theme coordinates the background, surfaces, ring, beads, controls, typography, borders, and completion feedback, and the selected theme is saved locally.
 
 ### 🌌 8. Intentional Native Launch Experience
-- The production splash uses a stable Midnight Sapphire background with a transparent Tasbeeh/geometric symbol; iOS can show the `ذِكْر` lockup while Android 12+ uses the centered symbol-only treatment required by the system splash API.
-- The native splash is held only until persisted theme and counter state are ready, so the first runtime frame transitions directly into the selected theme without an artificial delay.
+- Both native platforms use a stable Midnight Sapphire background and the same transparent Tasbeeh emblem. The JavaScript launch layer reveals the beads, glow, and `ذِكْر` branding after home is prepared.
+- Native handoff waits for restored theme/counter state and home layout, independently of the skippable 820 ms introduction. The first intro tap only skips; reduced motion uses a static handoff, and returning from background does not replay it.
 
 ### 🔒 9. 100% Offline & Absolute Privacy
 - **Zero Ads, Zero Trackers**: No analytics SDKs, no third-party network calls.

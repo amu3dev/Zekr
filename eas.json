@@ -1,8 +1,18 @@
 {
   "build": {
+    "development": {
+      "distribution": "internal",
+      "env": { "ZEKR_BUILD_VARIANT": "development" },
+      "android": { "gradleCommand": ":app:assembleDebug" }
+    },
     "preview": {
       "distribution": "internal",
+      "env": { "ZEKR_BUILD_VARIANT": "preview" },
       "android": { "buildType": "apk" }
+    },
+    "production": {
+      "env": { "ZEKR_BUILD_VARIANT": "production" },
+      "android": { "buildType": "app-bundle" }
     }
   }
 }

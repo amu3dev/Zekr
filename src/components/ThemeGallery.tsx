@@ -12,7 +12,8 @@ function TasbeehPreview({ theme, size = 116 }: { theme: ThemeTokens; size?: numb
   const id = useId().replace(/[^a-zA-Z0-9]/g, '');
   const { count, target } = theme.preview;
   const activeBeads = getActiveBeadCount(count);
-  const circumference = 2 * Math.PI * 34;
+  const radius = 34;
+  const circumference = 2 * Math.PI * radius;
 
   return (
     <View accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none"
@@ -32,8 +33,8 @@ function TasbeehPreview({ theme, size = 116 }: { theme: ThemeTokens; size?: numb
         </Defs>
         <Circle cx="60" cy="60" r="47" fill="none" stroke={theme.beadString} />
         <Circle cx="60" cy="60" r="38" fill={theme.ringInner} stroke={theme.surfaceBorder} />
-        <Circle cx="60" cy="60" r="34" fill="none" stroke={theme.track} strokeWidth="3" />
-        <Circle cx="60" cy="60" r="34" fill="none" stroke={theme.warm} strokeWidth="3" strokeLinecap="round"
+        <Circle cx="60" cy="60" r={radius} fill="none" stroke={theme.track} strokeWidth="3" />
+        <Circle cx="60" cy="60" r={radius} fill="none" stroke={theme.warm} strokeWidth="3" strokeLinecap="round"
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={circumference * (1 - Math.min(count / target, 1))} transform="rotate(-90 60 60)" />
         {Array.from({ length: TOTAL_BEADS }, (_, index) => {
@@ -80,8 +81,8 @@ function SelectionBadge({ theme, selected }: { theme: ThemeTokens; selected: boo
 
 export function ThemeGallery() {
   const { themeId, setThemeId, theme } = useTheme();
-  const { fontScale } = useWindowDimensions();
-  const [contentWidth, setContentWidth] = useState(0);
+  const { width, fontScale } = useWindowDimensions();
+  const [contentWidth, setContentWidth] = useState(() => Math.floor(Math.min(width - 36, 440) - 42.4));
   // Measure the modal's actual content width, including tablets and safe-area padding.
   const columns = contentWidth >= 292 && fontScale < 1.3 ? 2 : 1;
   const rows = Array.from({ length: Math.ceil(THEME_OPTIONS.length / columns) }, (_, index) =>
@@ -90,7 +91,8 @@ export function ThemeGallery() {
   return (
     <ScrollView style={styles.galleryScroll} contentContainerStyle={styles.galleryContent}
       indicatorStyle={theme.statusBarStyle === 'dark' ? 'black' : 'white'}>
-      <View onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)} style={styles.grid}>
+      <View accessibilityRole="radiogroup" accessibilityLabel="المظاهر"
+        onLayout={(event) => setContentWidth(event.nativeEvent.layout.width)} style={styles.grid}>
         {rows.map((row) => (
           <View key={`${columns}-${row[0].id}`} style={styles.gridRow}>
             {row.map((option) => {
@@ -133,7 +135,7 @@ const styles = StyleSheet.create({
   previewTarget: { fontSize: 9, marginTop: 1 },
   currentCard: { borderWidth: 1, borderRadius: 18, padding: 12, gap: 12, direction: 'rtl' },
   currentCardCompact: { flexDirection: 'row', alignItems: 'center' },
-  currentCopy: { flex: 1, flexShrink: 1, gap: 6 },
+  currentCopy: { flex: 1, flexShrink: 1 },
   name: { fontSize: 15, fontWeight: '700', textAlign: 'right', writingDirection: 'rtl' },
   description: { fontSize: 12, textAlign: 'right', writingDirection: 'rtl', marginTop: 4 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 10 },

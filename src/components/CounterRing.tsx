@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  AccessibilityInfo,
   Animated,
   Platform,
   Pressable,
@@ -11,6 +10,7 @@ import {
 import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 
 import { getCycleText, toArabicDigits } from '../arabic';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { getActiveBeadCount, TOTAL_BEADS } from '../beads';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
@@ -34,29 +34,11 @@ type Props = {
   onPress: () => void;
 };
 
-function useReducedMotion() {
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      if (active) setReduceMotion(enabled);
-    });
-
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
-
-  return reduceMotion;
-}
 
 export function CounterRing({ size, count, target, title, cycle, disabled, onPress }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReducedMotion() !== false;
   const isComplete = count >= target;
   const progress = Math.min(count / target, 1);
   const [pressScale] = useState(() => new Animated.Value(1));
