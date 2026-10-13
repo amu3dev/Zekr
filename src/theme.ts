@@ -1,12 +1,11 @@
 import { createContext, useContext } from 'react';
 
-export const THEME_IDS = ['midnightSapphire', 'royalAmethyst', 'softIvory'] as const;
-
-export type ThemeId = (typeof THEME_IDS)[number];
-
 export type ThemeTokens = {
-  id: ThemeId;
+  id: string;
   name: string;
+  displayName: string;
+  preview: { count: number; target: number };
+  category?: 'light' | 'dark';
   subtitle: string;
   background: string;
   backgroundStart: string;
@@ -64,6 +63,9 @@ export type ThemeTokens = {
 const midnightSapphire: ThemeTokens = {
   id: 'midnightSapphire',
   name: 'Midnight Sapphire',
+  displayName: 'ياقوت الليل',
+  preview: { count: 12, target: 33 },
+  category: 'dark',
   subtitle: 'سكينة ليلية بلون الياقوت',
   background: '#0B132B',
   backgroundStart: '#080F24',
@@ -121,6 +123,9 @@ const midnightSapphire: ThemeTokens = {
 const royalAmethyst: ThemeTokens = {
   id: 'royalAmethyst',
   name: 'Royal Amethyst',
+  displayName: 'الجمشت الملكي',
+  preview: { count: 12, target: 33 },
+  category: 'dark',
   subtitle: 'هوية بنفسجية رقيقة ومهيبة',
   background: '#21132F',
   backgroundStart: '#1A0E27',
@@ -178,6 +183,9 @@ const royalAmethyst: ThemeTokens = {
 const softIvory: ThemeTokens = {
   id: 'softIvory',
   name: 'Soft Ivory',
+  displayName: 'العاجي الهادئ',
+  preview: { count: 12, target: 33 },
+  category: 'light',
   subtitle: 'دفء هادئ وبساطة مضيئة',
   background: '#F5EFE6',
   backgroundStart: '#F1E8DC',
@@ -232,13 +240,17 @@ const softIvory: ThemeTokens = {
   statusBarStyle: 'dark',
 };
 
-export const THEMES: Record<ThemeId, ThemeTokens> = {
+// Register themes here once; IDs, validation, counts and gallery options derive from this registry.
+export const THEMES = {
   midnightSapphire,
   royalAmethyst,
   softIvory,
-};
+} satisfies Record<string, ThemeTokens>;
 
-export const THEME_OPTIONS = THEME_IDS.map((id) => THEMES[id]);
+export type ThemeId = keyof typeof THEMES;
+export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
+
+export const THEME_OPTIONS = THEME_IDS.map((id) => ({ ...THEMES[id], id }));
 export const DEFAULT_THEME_ID: ThemeId = 'midnightSapphire';
 
 export function isThemeId(value: unknown): value is ThemeId {

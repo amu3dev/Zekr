@@ -9,6 +9,7 @@ import {
   Switch,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -16,7 +17,8 @@ import { formatArabicNumber, normalizeDigits, toArabicDigits } from '../arabic';
 import { DHIKR_OPTIONS, DhikrOption, isValidTarget, MAX_TARGET, MIN_TARGET } from '../counter';
 import { THEME_OPTIONS, useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
-import { BookIcon, CheckIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
+import { BookIcon, CheckIcon, ChevronDownIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
+import { CurrentThemeCard, ThemeGallery } from './ThemeGallery';
 
 type ShellProps = {
   visible: boolean;
@@ -24,6 +26,9 @@ type ShellProps = {
   subtitle?: string;
   onClose: () => void;
   children: ReactNode;
+  closeLabel?: string;
+  animationType?: 'none' | 'fade';
+  textScaleLimit?: number;
 };
 
 function useModalStyles() {
@@ -31,12 +36,15 @@ function useModalStyles() {
   return useMemo(() => createStyles(theme), [theme]);
 }
 
-function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps) {
+function ModalShell({
+  visible, title, subtitle, onClose, children,
+  closeLabel = 'إغلاق', animationType = 'fade', textScaleLimit,
+}: ShellProps) {
   const styles = useModalStyles();
 
   return (
     <Modal
-      animationType="fade"
+      animationType={animationType}
       transparent
       statusBarTranslucent
       navigationBarTranslucent
@@ -44,20 +52,27 @@ function ModalShell({ visible, title, subtitle, onClose, children }: ShellProps)
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.backdrop}>
-        <Pressable accessibilityLabel="إغلاق" style={StyleSheet.absoluteFill} onPress={onClose} />
+        <Pressable accessible={false} importantForAccessibility="no" style={StyleSheet.absoluteFill} onPress={onClose} />
         <View style={styles.card} accessibilityViewIsModal>
           <View style={styles.sheetHandle} />
 
           <View style={styles.modalHeader}>
             <View style={styles.modalHeaderCopy}>
-              <Text style={styles.title} accessibilityRole="header">
+              <Text style={styles.title} accessibilityRole="header" maxFontSizeMultiplier={textScaleLimit}>
                 {title}
               </Text>
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+              {subtitle && (
+                <Text
+                  maxFontSizeMultiplier={textScaleLimit}
+                  style={[styles.subtitle, textScaleLimit ? { lineHeight: undefined } : null]}
+                >
+                  {subtitle}
+                </Text>
+              )}
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="إغلاق"
+              accessibilityLabel={closeLabel}
               hitSlop={8}
               onPress={onClose}
               style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
@@ -76,9 +91,11 @@ function ActionButton({
   label,
   variant = 'primary',
   onPress,
+  textScaleLimit,
 }: {
   label: string;
   variant?: 'primary' | 'secondary' | 'danger';
+  textScaleLimit?: number;
   onPress: () => void;
 }) {
   const styles = useModalStyles();
@@ -99,6 +116,7 @@ function ActionButton({
       ]}
     >
       <Text
+        maxFontSizeMultiplier={textScaleLimit}
         style={[
           styles.actionButtonText,
           isPrimary && styles.primaryText,
@@ -343,67 +361,6 @@ type SettingsProps = {
   onResetStats: () => void;
 };
 
-function ThemePreviewCard({
-  option,
-  selected,
-  onPress,
-}: {
-  option: ThemeTokens;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  const styles = useModalStyles();
-  const previewDots = Array.from({ length: 12 }, (_, index) => index);
-
-  return (
-    <Pressable
-      accessibilityRole="radio"
-      accessibilityLabel={`مظهر ${option.name}`}
-      accessibilityState={{ checked: selected }}
-      onPress={onPress}
-      style={({ pressed }) => [styles.themeCard, selected && styles.themeCardSelected, pressed && styles.pressed]}
-    >
-      <View style={[styles.themePreview, { backgroundColor: option.background }]}>
-        <View style={[styles.previewHalo, { borderColor: option.surfaceBorder }]}>
-          <View style={[styles.previewProgress, { borderTopColor: option.warm, borderRightColor: option.warm }]} />
-          <View style={[styles.previewCore, { backgroundColor: option.surface }]}>
-            <Text style={[styles.previewCount, { color: option.warm }]}>١٢</Text>
-            <Text style={[styles.previewFraction, { color: option.textMuted }]}>من ٣٣</Text>
-          </View>
-          {previewDots.map((dot) => {
-            const angle = (dot / previewDots.length) * 2 * Math.PI - Math.PI / 2;
-            const radius = 38;
-            return (
-              <View
-                key={dot}
-                style={[
-                  styles.previewDot,
-                  {
-                    backgroundColor: dot < 5 ? option.warm : option.accentMuted,
-                    left: 47 + radius * Math.cos(angle),
-                    top: 47 + radius * Math.sin(angle),
-                  },
-                ]}
-              />
-            );
-          })}
-        </View>
-      </View>
-      <View style={styles.themeCardFooter}>
-        <View style={styles.themeCardCopy}>
-          <Text style={styles.themeName}>{option.name}</Text>
-          <Text style={styles.themeSubtitle} numberOfLines={1}>{option.subtitle}</Text>
-        </View>
-        {selected && (
-          <View style={styles.themeSelectedIcon}>
-            <CheckIcon size={12} color={styles.selectedCheck.color} />
-          </View>
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
 export function SettingsModal({
   visible,
   hapticsEnabled,
@@ -417,127 +374,148 @@ export function SettingsModal({
   onResetStats,
 }: SettingsProps) {
   const styles = useModalStyles();
-  const { theme, themeId, setThemeId } = useTheme();
+  const { theme } = useTheme();
+  const { width, fontScale } = useWindowDimensions();
+  const [showGallery, setShowGallery] = useState(false);
+  const handleClose = () => {
+    setShowGallery(false);
+    onClose();
+  };
+  const handleBack = () => setShowGallery(false);
 
   return (
     <ModalShell
       visible={visible}
-      title="الإعدادات والتفضيلات"
-      subtitle="خصص هدوء التجربة كما تحب"
-      onClose={onClose}
+      title={showGallery ? 'معرض المظاهر' : 'الإعدادات والتفضيلات'}
+      subtitle={showGallery ? 'اختر المظهر الذي يناسبك' : 'خصص هدوء التجربة كما تحب'}
+      onClose={showGallery ? handleBack : handleClose}
+      closeLabel={showGallery ? 'العودة إلى الإعدادات' : 'إغلاق'}
+      animationType="none"
+      textScaleLimit={2}
     >
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsScroll}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>المظهر</Text>
-          <Text style={styles.sectionHint}>يتغير فورًا</Text>
-        </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.themeOptionsRow}
-        >
-          {THEME_OPTIONS.map((option) => (
-            <ThemePreviewCard
-              key={option.id}
-              option={option}
-              selected={option.id === themeId}
-              onPress={() => setThemeId(option.id)}
-            />
-          ))}
-        </ScrollView>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingItemIconWrap}>
-            <VibrateIcon size={20} color={theme.iconAccent} />
+      {showGallery ? (
+        <ThemeGallery />
+      ) : (
+        <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsScroll}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>المظهر</Text>
+            <Text style={styles.sectionHint}>يتغير فورًا</Text>
           </View>
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.settingCopy}
+          <CurrentThemeCard compact={width >= 360 && fontScale < 1.3} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`استعراض المظاهر، ${toArabicDigits(THEME_OPTIONS.length)} مظاهر متاحة`}
+            accessibilityHint="يفتح معرض المظاهر لاختيار المظهر"
+            onPress={() => setShowGallery(true)}
+            style={({ pressed }) => [styles.browseThemes, pressed && styles.pressed]}
           >
-            <Text style={styles.settingTitle}>الاهتزاز اللمسي</Text>
-            <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
-          </View>
-          <Switch
-            accessibilityLabel="الاهتزاز اللمسي"
-            accessibilityHint="نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف"
-            value={hapticsEnabled}
-            onValueChange={onToggleHaptics}
-            trackColor={{ false: theme.track, true: theme.accent }}
-            thumbColor={hapticsEnabled ? theme.warm : theme.textMuted}
-          />
-        </View>
+            <View style={styles.settingCopy}>
+              <Text style={[styles.settingTitle, { textAlign: 'right' }]}>استعراض المظاهر</Text>
+              <Text style={styles.browseCount}>{toArabicDigits(THEME_OPTIONS.length)} مظاهر متاحة</Text>
+            </View>
+            <View style={{ transform: [{ rotate: '90deg' }] }}>
+              <ChevronDownIcon size={20} color={theme.textMuted} />
+            </View>
+          </Pressable>
 
-        <View style={styles.settingItem}>
-          <View style={styles.settingItemIconWrap}>
-            <SparkleIcon size={20} color={theme.iconAccent} />
-          </View>
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.settingCopy}
-          >
-            <Text style={styles.settingTitle}>مؤثرات النقر الحر</Text>
-            <Text style={styles.settingDesc}>نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر</Text>
-          </View>
-          <Switch
-            accessibilityLabel="مؤثرات النقر الحر"
-            accessibilityHint="نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر"
-            value={visualEffectsEnabled}
-            onValueChange={onToggleVisualEffects}
-            trackColor={{ false: theme.track, true: theme.accent }}
-            thumbColor={visualEffectsEnabled ? theme.warm : theme.textMuted}
-          />
-        </View>
-
-        <View style={styles.settingItem}>
-          <View style={styles.settingItemIconWrap}>
-            <FullScreenIcon size={20} color={theme.iconAccent} />
-          </View>
-          <View
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={styles.settingCopy}
-          >
-            <Text style={styles.settingTitle}>النقر في كامل الشاشة</Text>
-            <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
-          </View>
-          <Switch
-            accessibilityLabel="النقر في كامل الشاشة"
-            accessibilityHint="المس أي مكان بالشاشة لزيادة العدّ دون النظر"
-            value={fullScreenTap}
-            onValueChange={onToggleFullScreenTap}
-            trackColor={{ false: theme.track, true: theme.accent }}
-            thumbColor={fullScreenTap ? theme.warm : theme.textMuted}
-          />
-        </View>
-
-        <View style={styles.statsCard}>
-          <Text style={styles.statsLabel}>مجموع التسبيحات الكلي</Text>
-          <Text style={styles.statsCount}>{formatArabicNumber(totalSessionCount)}</Text>
-          <Text style={styles.statsSubtext}>تسبيحة وذكر بحمد الله</Text>
-
-          {totalSessionCount > 0 && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onResetStats}
-              style={({ pressed }) => [styles.resetStatsButton, pressed && styles.pressed]}
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemIconWrap}>
+              <VibrateIcon size={20} color={theme.iconAccent} />
+            </View>
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.settingCopy}
             >
-              <Text style={styles.resetStatsText}>تصفير الإحصائيات</Text>
-            </Pressable>
-          )}
-        </View>
+              <Text style={styles.settingTitle}>الاهتزاز اللمسي</Text>
+              <Text style={styles.settingDesc}>نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف</Text>
+            </View>
+            <Switch
+              accessibilityLabel="الاهتزاز اللمسي"
+              accessibilityHint="نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف"
+              value={hapticsEnabled}
+              onValueChange={onToggleHaptics}
+              trackColor={{ false: theme.track, true: theme.accent }}
+              thumbColor={hapticsEnabled ? theme.warm : theme.textMuted}
+            />
+          </View>
 
-        <View style={styles.aboutBox}>
-          <BookIcon size={16} color={theme.iconAccent} />
-          <Text style={styles.aboutText}>
-            تطبيق «ذِكر» صُمم ليكون رفيقًا هادئًا لذكر الله، خاليًا تمامًا من الإعلانات والتتبع. بياناتك محفوظة محليًا على جهازك فقط.
-          </Text>
-        </View>
-      </ScrollView>
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemIconWrap}>
+              <SparkleIcon size={20} color={theme.iconAccent} />
+            </View>
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.settingCopy}
+            >
+              <Text style={styles.settingTitle}>مؤثرات النقر الحر</Text>
+              <Text style={styles.settingDesc}>نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر</Text>
+            </View>
+            <Switch
+              accessibilityLabel="مؤثرات النقر الحر"
+              accessibilityHint="نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر"
+              value={visualEffectsEnabled}
+              onValueChange={onToggleVisualEffects}
+              trackColor={{ false: theme.track, true: theme.accent }}
+              thumbColor={visualEffectsEnabled ? theme.warm : theme.textMuted}
+            />
+          </View>
+
+          <View style={styles.settingItem}>
+            <View style={styles.settingItemIconWrap}>
+              <FullScreenIcon size={20} color={theme.iconAccent} />
+            </View>
+            <View
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.settingCopy}
+            >
+              <Text style={styles.settingTitle}>النقر في كامل الشاشة</Text>
+              <Text style={styles.settingDesc}>المس أي مكان بالشاشة لزيادة العدّ دون النظر</Text>
+            </View>
+            <Switch
+              accessibilityLabel="النقر في كامل الشاشة"
+              accessibilityHint="المس أي مكان بالشاشة لزيادة العدّ دون النظر"
+              value={fullScreenTap}
+              onValueChange={onToggleFullScreenTap}
+              trackColor={{ false: theme.track, true: theme.accent }}
+              thumbColor={fullScreenTap ? theme.warm : theme.textMuted}
+            />
+          </View>
+
+          <View style={styles.statsCard}>
+            <Text style={styles.statsLabel}>مجموع التسبيحات الكلي</Text>
+            <Text style={styles.statsCount}>{formatArabicNumber(totalSessionCount)}</Text>
+            <Text style={styles.statsSubtext}>تسبيحة وذكر بحمد الله</Text>
+
+            {totalSessionCount > 0 && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onResetStats}
+                style={({ pressed }) => [styles.resetStatsButton, pressed && styles.pressed]}
+              >
+                <Text style={styles.resetStatsText}>تصفير الإحصائيات</Text>
+              </Pressable>
+            )}
+          </View>
+
+          <View style={styles.aboutBox}>
+            <BookIcon size={16} color={theme.iconAccent} />
+            <Text style={styles.aboutText}>
+              تطبيق «ذِكر» صُمم ليكون رفيقًا هادئًا لذكر الله، خاليًا تمامًا من الإعلانات والتتبع. بياناتك محفوظة محليًا على جهازك فقط.
+            </Text>
+          </View>
+        </ScrollView>
+      )}
 
       <View style={styles.actions}>
-        <ActionButton label="تم" variant="primary" onPress={onClose} />
+        <ActionButton
+          textScaleLimit={2}
+          label={showGallery ? 'العودة إلى الإعدادات' : 'تم'}
+          variant="primary"
+          onPress={showGallery ? handleBack : handleClose}
+        />
       </View>
     </ModalShell>
   );
@@ -650,9 +628,9 @@ function createStyles(theme: ThemeTokens) {
       borderColor: theme.surfaceBorder,
       borderRadius: 18,
       borderWidth: 1,
-      height: 36,
+      height: 44,
       justifyContent: 'center',
-      width: 36,
+      width: 44,
     },
     closeIcon: { color: theme.textMuted },
     categoryContainer: {
@@ -815,6 +793,7 @@ function createStyles(theme: ThemeTokens) {
     },
     settingsScroll: {
       maxHeight: 510,
+      flexShrink: 1,
     },
     sectionHeaderRow: {
       alignItems: 'baseline',
@@ -831,96 +810,25 @@ function createStyles(theme: ThemeTokens) {
       color: theme.textDim,
       fontSize: 11,
     },
-    themeOptionsRow: {
-      gap: 10,
-      paddingBottom: 16,
-    },
-    themeCard: {
+    browseThemes: {
+      alignItems: 'center',
       backgroundColor: theme.surfaceSoft,
       borderColor: theme.surfaceBorder,
-      borderRadius: 18,
+      borderRadius: 16,
       borderWidth: 1,
-      overflow: 'hidden',
-      width: 134,
-    },
-    themeCardSelected: {
-      borderColor: theme.warm,
-      borderWidth: 1.5,
-    },
-    themePreview: {
-      alignItems: 'center',
-      height: 108,
-      justifyContent: 'center',
-      padding: 8,
-    },
-    previewHalo: {
-      alignItems: 'center',
-      borderRadius: 48,
-      borderWidth: 1,
-      height: 94,
-      justifyContent: 'center',
-      position: 'relative',
-      width: 94,
-    },
-    previewProgress: {
-      borderRadius: 48,
-      borderRightWidth: 3,
-      borderTopWidth: 3,
-      height: 78,
-      position: 'absolute',
-      transform: [{ rotate: '28deg' }],
-      width: 78,
-    },
-    previewCore: {
-      alignItems: 'center',
-      borderRadius: 31,
-      height: 62,
-      justifyContent: 'center',
-      width: 62,
-    },
-    previewCount: {
-      fontSize: 18,
-      fontWeight: '800',
-      lineHeight: 21,
-    },
-    previewFraction: {
-      fontSize: 8,
-      marginTop: 2,
-    },
-    previewDot: {
-      borderRadius: 3,
-      height: 6,
-      position: 'absolute',
-      width: 6,
-    },
-    themeCardFooter: {
-      alignItems: 'center',
       flexDirection: 'row',
-      gap: 6,
-      minHeight: 45,
-      paddingHorizontal: 8,
-      paddingVertical: 7,
+      gap: 12,
+      marginTop: 10,
+      marginBottom: 8,
+      minHeight: 60,
+      padding: 14,
     },
-    themeCardCopy: {
-      flex: 1,
-    },
-    themeName: {
-      color: theme.text,
-      fontSize: 11,
-      fontWeight: '800',
-    },
-    themeSubtitle: {
-      color: theme.textDim,
-      fontSize: 8.5,
-      marginTop: 2,
-    },
-    themeSelectedIcon: {
-      alignItems: 'center',
-      backgroundColor: theme.warm,
-      borderRadius: 10,
-      height: 20,
-      justifyContent: 'center',
-      width: 20,
+    browseCount: {
+      color: theme.textMuted,
+      fontSize: 12,
+      marginTop: 4,
+      textAlign: 'right',
+      writingDirection: 'rtl',
     },
     settingItem: {
       alignItems: 'center',
@@ -1009,6 +917,8 @@ function createStyles(theme: ThemeTokens) {
       flex: 1,
       justifyContent: 'center',
       minHeight: 48,
+      paddingVertical: 10,
+      paddingHorizontal: 8,
     },
     primaryButton: {
       backgroundColor: theme.warm,
@@ -1023,6 +933,8 @@ function createStyles(theme: ThemeTokens) {
       borderWidth: 1,
     },
     actionButtonText: {
+      textAlign: 'center',
+      flexShrink: 1,
       fontSize: 14,
       fontWeight: '700',
     },
