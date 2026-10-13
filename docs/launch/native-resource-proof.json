@@ -1,0 +1,77 @@
+{
+  "environment": "Expo SDK 57 generated Android resources; no device validation",
+  "background": "#0B132B",
+  "assetBytes": 18003,
+  "resources": [
+    {
+      "resource": "drawable-hdpi/splashscreen_logo.png",
+      "width": 432,
+      "height": 432,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-mdpi/splashscreen_logo.png",
+      "width": 288,
+      "height": 288,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-night-hdpi/splashscreen_logo.png",
+      "width": 432,
+      "height": 432,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-night-mdpi/splashscreen_logo.png",
+      "width": 288,
+      "height": 288,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-night-xhdpi/splashscreen_logo.png",
+      "width": 576,
+      "height": 576,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-night-xxhdpi/splashscreen_logo.png",
+      "width": 864,
+      "height": 864,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-night-xxxhdpi/splashscreen_logo.png",
+      "width": 1152,
+      "height": 1152,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-xhdpi/splashscreen_logo.png",
+      "width": 576,
+      "height": 576,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-xxhdpi/splashscreen_logo.png",
+      "width": 864,
+      "height": 864,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    },
+    {
+      "resource": "drawable-xxxhdpi/splashscreen_logo.png",
+      "width": 1152,
+      "height": 1152,
+      "cornerAlpha": 0,
+      "opaqueWhitePixels": 0
+    }
+  ]
+}

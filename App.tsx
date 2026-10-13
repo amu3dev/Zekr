@@ -18,6 +18,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
 import { FreeTapMode } from './src/components/FreeTapMode';
+import { LaunchExperience } from './src/components/LaunchExperience';
 import {
   BookIcon,
   ChevronDownIcon,
@@ -51,6 +52,8 @@ import { loadCounterState, saveCounterState } from './src/storage';
 
 // Keep the native Midnight Sapphire launch identity in place until both the
 // persisted theme and the counter state are ready to render the first frame.
+// All motion lives in the skippable JS layer, including reduced-motion handling.
+SplashScreen.setOptions({ duration: 0, fade: false });
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 type OpenModal =
@@ -79,6 +82,8 @@ function CounterScreen() {
   const { width, height } = useWindowDimensions();
   const [state, dispatch] = useReducer(counterReducer, initialCounterState);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isHomeLaidOut, setIsHomeLaidOut] = useState(false);
+  const [launchDismissed, setLaunchDismissed] = useState(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
@@ -91,12 +96,6 @@ function CounterScreen() {
       setIsLoaded(true);
     });
   }, []);
-
-  useEffect(() => {
-    if (isLoaded && isThemeReady) {
-      SplashScreen.hideAsync().catch(() => undefined);
-    }
-  }, [isLoaded, isThemeReady]);
 
   // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps.
   useEffect(() => {
@@ -178,12 +177,18 @@ function CounterScreen() {
       start={{ x: 0.5, y: 0 }}
       end={{ x: 0.5, y: 1 }}
       style={styles.screen}
+      onTouchStart={() => {
+        if (isLoaded && isThemeReady) setLaunchDismissed(true);
+      }}
     >
       <StatusBar style={theme.statusBarStyle} />
       <View pointerEvents="none" style={styles.backgroundOrb} />
 
-      {isLoaded && (
-        <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {isLoaded && isThemeReady && (
+        <View
+          onLayout={() => setIsHomeLaidOut(true)}
+          style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
+        >
           <View
             accessibilityElementsHidden={state.fullScreenTap}
             importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
@@ -485,6 +490,10 @@ function CounterScreen() {
           setOpenModal(null);
         }}
         onConfirm={handleConfirmReset}
+      />
+      <LaunchExperience
+        ready={isLoaded && isThemeReady && isHomeLaidOut}
+        dismissed={launchDismissed}
       />
     </LinearGradient>
   );

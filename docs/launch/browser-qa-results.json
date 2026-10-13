@@ -1,0 +1,13 @@
+{
+  "environment": "Actual App + LaunchExperience via React Native Web; mocked native splash, safe area and OS events. Not Android validation.",
+  "results": [
+    "Normal launch exits; background/foreground does not replay; native hide called once.",
+    "Skip dismisses the launch.",
+    "Reduced motion dismisses immediately and preserves stored theme.",
+    "Background during launch cancels and does not replay.",
+    "First home touch dismisses launch and increments exactly once; Amethyst theme remains stored.",
+    "Enabling reduced motion during launch immediately cancels it.",
+    "failAnimation: static fallback releases home without waiting.",
+    "unknownMotion: static fallback releases home without waiting."
+  ]
+}

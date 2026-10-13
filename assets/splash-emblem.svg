@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 1024 1024" fill="none">
+  <g transform="translate(0 88)">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="512" cy="424" r="236" stroke="#5369AD" stroke-width="12" opacity="0.82" />
+    <path d="M512 188v20M748 424h-20M512 660v-20M276 424h20" stroke="#F0CF91" stroke-width="8" opacity="0.9" />
+  </g>
+
+  <g fill="#F0CF91" stroke="#FFE9B9" stroke-width="5">
+    <circle cx="512" cy="188" r="27" />
+    <circle cx="630" cy="220" r="27" />
+    <circle cx="716" cy="306" r="27" />
+    <circle cx="748" cy="424" r="27" />
+    <circle cx="716" cy="542" r="27" />
+    <circle cx="630" cy="628" r="27" />
+    <circle cx="512" cy="660" r="27" />
+    <circle cx="394" cy="628" r="27" />
+    <circle cx="308" cy="542" r="27" />
+    <circle cx="276" cy="424" r="27" />
+    <circle cx="308" cy="306" r="27" />
+    <circle cx="394" cy="220" r="27" />
+  </g>
+
+  <polygon
+    points="512,298 541,360 601,335 576,396 638,424 576,452 601,513 541,488 512,550 483,488 423,513 448,452 386,424 448,396 423,335 483,360"
+    fill="#0B132B"
+    stroke="#F0CF91"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+  <circle cx="512" cy="424" r="24" fill="#F0CF91" stroke="#FFE9B9" stroke-width="6" />
+  </g>
+</svg>
