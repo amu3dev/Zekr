@@ -137,7 +137,7 @@ export function FreeTapMode({
     <View accessibilityViewIsModal style={styles.overlay}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`النقر الحر: ${dhikr.phrase}`}
+        accessibilityLabel="النقر الحر"
         accessibilityHint="اضغط في أي مكان لزيادة العدّ"
         accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(target)}` }}
         onPress={handleTap}
@@ -164,7 +164,12 @@ export function FreeTapMode({
           </Text>
         </View>
 
-        <View pointerEvents="none" style={styles.counterSection}>
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          pointerEvents="none"
+          style={styles.counterSection}
+        >
           <View style={[styles.progressRing, { height: ringSize, width: ringSize }]}>
             <View pointerEvents="none" style={styles.ringArtwork}>
               <Svg height={ringSize} viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`} width={ringSize}>
@@ -275,7 +280,13 @@ export function FreeTapMode({
               <NextCycleIcon size={15} color={theme.onWarm} />
             </Pressable>
           ) : (
-            <Text style={styles.tapHint}>المس أي مكان لزيادة العدّ</Text>
+            <Text
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={styles.tapHint}
+            >
+              المس أي مكان لزيادة العدّ
+            </Text>
           )}
 
           <Pressable
