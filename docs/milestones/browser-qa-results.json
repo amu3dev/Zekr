@@ -1,0 +1,11 @@
+{
+  "environment": "Actual app rendered through React Native Web in Chromium, mocked native APIs. No physical device or native simulator testing.",
+  "results": [
+    "32 → 33 → 34 → 44 → 66 → 67 → undo 66: cumulative labels, temporary completion and tap-only announcements pass.",
+    "Goal change preserves count; 35 batched taps cross 100 with exactly one completion.",
+    "Free Tap crosses 200; reload restores count, base target and mode without completion replay.",
+    "Custom Arabic input goals 7 and 40 preserve count, cross boundaries, and restore at an exact milestone without replay.",
+    "Theme switching and theme restoration preserve progression; reset returns to 0 and first milestone.",
+    "Motion enabled: restoration does not start completion feedback; next interval continues immediately."
+  ]
+}

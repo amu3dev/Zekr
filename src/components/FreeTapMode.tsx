@@ -11,10 +11,11 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { getCycleText, toArabicDigits } from '../arabic';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import type { DhikrOption } from '../counter';
+import { getMilestoneProgress, type DhikrOption } from '../counter';
+import { getBeadCycle } from '../beads';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
-import { CloseIcon, NextCycleIcon } from './Icons';
+import { CloseIcon } from './Icons';
 
 const VIEWBOX = 320;
 const CENTER = VIEWBOX / 2;
@@ -25,13 +26,12 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 type Props = {
   count: number;
   target: number;
-  cycle: number;
+  completion: string | null;
   dhikr: DhikrOption;
   effectsEnabled: boolean;
   topInset: number;
   bottomInset: number;
   onTap: () => void;
-  onNextCycle: () => void;
   onExit: () => void;
 };
 
@@ -46,13 +46,12 @@ function getPhraseStyle(phraseLength: number) {
 export function FreeTapMode({
   count,
   target,
-  cycle,
+  completion,
   dhikr,
   effectsEnabled,
   topInset,
   bottomInset,
   onTap,
-  onNextCycle,
   onExit,
 }: Props) {
   const { height, width } = useWindowDimensions();
@@ -62,8 +61,8 @@ export function FreeTapMode({
   const [rippleAnim] = useState(() => new Animated.Value(0));
   const [countPulse] = useState(() => new Animated.Value(1));
 
-  const isComplete = count >= target;
-  const progress = Math.min(count / Math.max(target, 1), 1);
+  const { activeMilestone, progress } = getMilestoneProgress(count, target);
+  const cycle = getBeadCycle(count);
   const safeHeight = Math.max(360, height - topInset - bottomInset);
   const ringSize = Math.round(Math.max(194, Math.min(width - 48, 300, safeHeight * 0.42)));
   const countDigits = String(count).length;
@@ -121,7 +120,7 @@ export function FreeTapMode({
         accessibilityRole="button"
         accessibilityLabel="النقر الحر"
         accessibilityHint="اضغط في أي مكان لزيادة العدّ"
-        accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(target)}` }}
+        accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)}` }}
         onPress={handleTap}
         style={({ pressed }) => [styles.tapSurface, effectsEnabled && pressed && styles.tapSurfacePressed]}
       />
@@ -240,9 +239,10 @@ export function FreeTapMode({
               </Text>
               <Text style={styles.progressText}>
                 {toArabicDigits(count)} <Text style={styles.progressSeparator}>من</Text>{' '}
-                {toArabicDigits(target)}
+                {toArabicDigits(activeMilestone)}
               </Text>
               <Text style={styles.cycleText}>{getCycleText(cycle)}</Text>
+              <Text style={styles.completionText}>{completion ?? ' '}</Text>
             </Animated.View>
           </View>
         </View>
@@ -251,25 +251,13 @@ export function FreeTapMode({
           pointerEvents="box-none"
           style={[styles.bottomSection, { paddingBottom: Math.max(16, bottomInset + 12) }]}
         >
-          {isComplete ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="بدء الدورة التالية"
-              onPress={onNextCycle}
-              style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
-            >
-              <Text style={styles.nextCycleText}>الدورة التالية</Text>
-              <NextCycleIcon size={15} color={theme.onWarm} />
-            </Pressable>
-          ) : (
-            <Text
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-              style={styles.tapHint}
-            >
-              المس أي مكان لزيادة العدّ
-            </Text>
-          )}
+          <Text
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.tapHint}
+          >
+            المس أي مكان لزيادة العدّ
+          </Text>
 
           <Pressable
             accessibilityRole="button"
@@ -391,19 +379,12 @@ function createStyles(theme: ThemeTokens) {
       color: theme.textDim,
       fontSize: 12,
     },
-    nextCycleButton: {
-      alignItems: 'center',
-      backgroundColor: theme.warm,
-      borderRadius: 18,
-      flexDirection: 'row',
-      gap: 6,
-      paddingHorizontal: 16,
-      paddingVertical: 9,
-    },
-    nextCycleText: {
-      color: theme.onWarm,
+    completionText: {
+      color: theme.success,
       fontSize: 12,
-      fontWeight: '800',
+      height: 24,
+      marginTop: 6,
+      textAlign: 'center',
     },
     exitButton: {
       alignItems: 'center',

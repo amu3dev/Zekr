@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { getActiveBeadCount, TOTAL_BEADS } from '../src/beads.ts';
+import { getActiveBeadCount, getBeadCycle, TOTAL_BEADS } from '../src/beads.ts';
 import { counterReducer, initialCounterState } from '../src/counter.ts';
 
 test('the 33 beads advance one at a time and wrap independently of the goal', () => {
@@ -23,7 +23,7 @@ test('the 33 beads advance one at a time and wrap independently of the goal', ()
   }
 });
 
-test('undo, reset, and next cycle keep the bead loop aligned with count', () => {
+test('undo and reset keep the bead loop aligned with count', () => {
   let state = initialCounterState;
   for (let count = 1; count <= 34; count += 1) {
     state = counterReducer(state, { type: 'increment' });
@@ -41,13 +41,8 @@ test('undo, reset, and next cycle keep the bead loop aligned with count', () => 
 
   state = counterReducer(state, { type: 'reset' });
   assert.equal(state.count, 0);
-  assert.equal(state.cycle, 1);
+  assert.equal(getBeadCycle(state.count), 1);
   assert.equal(getActiveBeadCount(state.count), 0);
   assert.equal(state.totalSessionCount, 33);
 
-  state = counterReducer(state, { type: 'nextCycle' });
-  assert.equal(state.count, 0);
-  assert.equal(state.cycle, 2);
-  assert.equal(getActiveBeadCount(state.count), 0);
-  assert.equal(state.totalSessionCount, 33);
 });

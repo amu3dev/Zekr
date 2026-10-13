@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Platform,
@@ -11,14 +11,15 @@ import Svg, { Circle, Defs, G, LinearGradient, Path, RadialGradient, Stop } from
 
 import { getCycleText, toArabicDigits } from '../arabic';
 import { useReducedMotion } from '../hooks/useReducedMotion';
-import { getActiveBeadCount, TOTAL_BEADS } from '../beads';
+import { getActiveBeadCount, getBeadCycle, TOTAL_BEADS } from '../beads';
+import { getMilestoneProgress } from '../counter';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const VIEWBOX = 360;
 const CENTER = VIEWBOX / 2;
-const RADIUS = 113;
+const RADIUS = 157;
 const STROKE = 8;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const BEAD_RADIUS = 139;
@@ -29,26 +30,30 @@ type Props = {
   count: number;
   target: number;
   title: string;
-  cycle: number;
+  completion: string | null;
+  effectsEnabled: boolean;
   disabled?: boolean;
   onPress: () => void;
 };
 
 
-export function CounterRing({ size, count, target, title, cycle, disabled, onPress }: Props) {
+export function CounterRing({ size, count, target, title, completion, effectsEnabled, disabled, onPress }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-  const reduceMotion = useReducedMotion() !== false;
-  const isComplete = count >= target;
-  const progress = Math.min(count / target, 1);
+  const reduceMotion = useReducedMotion() !== false || !effectsEnabled;
+  const { activeMilestone, progress } = getMilestoneProgress(count, target);
+  const cycle = getBeadCycle(count);
   const [pressScale] = useState(() => new Animated.Value(1));
   const [countPop] = useState(() => new Animated.Value(1));
   const [rippleAnim] = useState(() => new Animated.Value(0));
-  const [completePulse] = useState(() => new Animated.Value(1));
   const [progressAnim] = useState(() => new Animated.Value(progress));
+  const previousInterval = useRef({ activeMilestone, target });
 
   useEffect(() => {
-    if (reduceMotion) {
+    const intervalChanged = previousInterval.current.activeMilestone !== activeMilestone ||
+      previousInterval.current.target !== target;
+    previousInterval.current = { activeMilestone, target };
+    if (reduceMotion || intervalChanged) {
       progressAnim.setValue(progress);
       return;
     }
@@ -60,31 +65,27 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
     });
     animation.start();
     return () => animation.stop();
-  }, [progress, progressAnim, reduceMotion]);
+  }, [activeMilestone, target, progress, progressAnim, reduceMotion]);
 
   useEffect(() => {
-    if (!isComplete || reduceMotion) {
-      completePulse.stopAnimation();
-      completePulse.setValue(1);
-      return;
+    if (reduceMotion) {
+      pressScale.stopAnimation();
+      pressScale.setValue(1);
+      countPop.stopAnimation();
+      countPop.setValue(1);
+      rippleAnim.stopAnimation();
+      rippleAnim.setValue(0);
     }
-
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(completePulse, { toValue: 1.025, duration: 1000, useNativeDriver: true }),
-        Animated.timing(completePulse, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      ]),
-    );
-
-    animation.start();
     return () => {
-      animation.stop();
-      completePulse.setValue(1);
+      pressScale.stopAnimation();
+      countPop.stopAnimation();
+      rippleAnim.stopAnimation();
     };
-  }, [completePulse, isComplete, reduceMotion]);
+  }, [reduceMotion, pressScale, countPop, rippleAnim]);
 
   const runPressAnimation = () => {
     if (reduceMotion) return;
+    pressScale.stopAnimation();
     Animated.spring(pressScale, {
       toValue: 0.95,
       useNativeDriver: true,
@@ -95,6 +96,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
 
   const runReleaseAnimation = () => {
     if (reduceMotion) return;
+    pressScale.stopAnimation();
     Animated.spring(pressScale, {
       toValue: 1,
       useNativeDriver: true,
@@ -105,6 +107,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
 
   const handlePress = () => {
     if (!reduceMotion) {
+      countPop.stopAnimation();
       countPop.setValue(1.08);
       Animated.spring(countPop, {
         toValue: 1,
@@ -113,6 +116,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
         tension: 150,
       }).start();
 
+      rippleAnim.stopAnimation();
       rippleAnim.setValue(0);
       Animated.timing(rippleAnim, {
         toValue: 1,
@@ -125,7 +129,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
   };
 
   // The bead loop is always 33 taps; the goal arc remains an independent view
-  // of progress toward the selected target.
+  // of progress within the current milestone interval.
   const activeBeads = getActiveBeadCount(count);
   const beads = Array.from({ length: TOTAL_BEADS }, (_, id) => {
     const beadAngle = (id / TOTAL_BEADS) * 2 * Math.PI - Math.PI / 2;
@@ -186,7 +190,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
         <Circle
           cx={CENTER}
           cy={CENTER}
-          r={RADIUS + 7}
+          r={120}
           fill="url(#ringDiscShade)"
           stroke={theme.surfaceBorder}
           strokeWidth={1.2}
@@ -291,7 +295,6 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
           {
             transform: [
               { scale: pressScale },
-              { scale: isComplete ? completePulse : 1 },
             ],
           },
         ]}
@@ -299,8 +302,8 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`عدّاد ${title}`}
-          accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(target)}` }}
-          accessibilityHint="اضغط للتسبيح"
+          accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)}` }}
+          accessibilityHint={`اضغط للتسبيح، ${getCycleText(cycle)}، ${toArabicDigits(getActiveBeadCount(count))} من ٣٣ حبة`}
           accessibilityState={{ disabled }}
           disabled={disabled}
           onPressIn={runPressAnimation}
@@ -312,7 +315,7 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
             pressed && styles.pressed,
           ]}
         >
-          <View style={styles.cyclePill}>
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.cyclePill}>
             <View style={styles.cycleDot} />
             <Text style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
           </View>
@@ -330,14 +333,12 @@ export function CounterRing({ size, count, target, title, cycle, disabled, onPre
           </Animated.View>
 
           <Text style={styles.targetText}>
-            {toArabicDigits(count)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(target)}
+            {toArabicDigits(count)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(activeMilestone)}
           </Text>
 
-          {isComplete && (
-            <View style={styles.completeStatusBadge}>
-              <Text style={styles.completeStatusText}>اكتمل الورد</Text>
-            </View>
-          )}
+          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.completionSlot}>
+            <Text style={styles.completeStatusText}>{completion ?? ' '}</Text>
+          </View>
         </Pressable>
       </Animated.View>
     </View>
@@ -419,14 +420,10 @@ function createStyles(theme: ThemeTokens) {
       fontSize: 12,
       fontWeight: '500',
     },
-    completeStatusBadge: {
-      backgroundColor: theme.successSurface,
-      borderColor: theme.successBorder,
-      borderRadius: 10,
-      borderWidth: 1,
-      marginTop: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
+    completionSlot: {
+      height: 24,
+      justifyContent: 'center',
+      marginTop: 4,
     },
     completeStatusText: {
       color: theme.success,

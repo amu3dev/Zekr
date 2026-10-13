@@ -1,9 +1,11 @@
+import { isRunningInExpoGo } from 'expo';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   AppState,
   Platform,
   Pressable,
@@ -24,7 +26,6 @@ import {
   ChevronDownIcon,
   FullScreenIcon,
   MenuIcon,
-  NextCycleIcon,
   ResetIcon,
   RosetteClasp,
   SettingsIcon,
@@ -43,6 +44,7 @@ import {
   type CounterAction,
   DhikrOption,
   getDhikr,
+  getMilestoneProgress,
   initialCounterState,
   PRESET_TARGETS,
 } from './src/counter';
@@ -54,7 +56,10 @@ import { loadCounterState, saveCounterState } from './src/storage';
 // Keep the native Midnight Sapphire launch identity in place until both the
 // persisted theme and the counter state are ready to render the first frame.
 // All motion lives in the skippable JS layer, including reduced-motion handling.
-SplashScreen.setOptions({ duration: 0, fade: false });
+// Expo Go owns its native splash and does not support custom exit options.
+if ((Platform.OS === 'android' || Platform.OS === 'ios') && !isRunningInExpoGo()) {
+  SplashScreen.setOptions({ duration: 0, fade: false });
+}
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 type OpenModal =
@@ -90,15 +95,23 @@ function CounterScreen() {
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
+  const [completion, setCompletion] = useState<string | null>(null);
   const stateRef = useRef(state);
   // Track queued actions with the same reducer, so feedback and background
   // flushes see every tap even before React commits a batch.
   const dispatchCounter = useCallback((action: CounterAction) => {
+    setCompletion(null);
     const next = counterReducer(stateRef.current, action);
     stateRef.current = next;
     dispatch(action);
     return next;
   }, []);
+
+  useEffect(() => {
+    if (!completion) return;
+    const timer = setTimeout(() => setCompletion(null), 900);
+    return () => clearTimeout(timer);
+  }, [completion]);
 
   useEffect(() => {
     loadCounterState().then((saved) => {
@@ -135,26 +148,28 @@ function CounterScreen() {
 
   const dhikr = getDhikr(state.dhikrId);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
-  const isComplete = state.count >= state.target;
   const availableHeight = height - insets.top - insets.bottom;
   const ringSize = Math.round(Math.max(200, Math.min(width - 28, availableHeight * 0.44, 350)));
   const geometrySize = ringSize * 1.16;
   const canUndo = state.count > 0;
 
   const handleIncrement = () => {
+    const previousCount = stateRef.current.count;
     const next = dispatchCounter({ type: 'increment' });
-    playHaptic(next.count === next.target ? 'success' : 'tap', next.hapticsEnabled);
+    if (next.count === previousCount) return;
+    const { isMilestone, activeMilestone } = getMilestoneProgress(next.count, next.target);
+    if (isMilestone) {
+      const message = `اكتمل الهدف ${toArabicDigits(activeMilestone)}`;
+      setCompletion(message);
+      AccessibilityInfo.announceForAccessibility(message);
+    }
+    playHaptic(isMilestone ? 'success' : 'tap', next.hapticsEnabled);
   };
 
   const handleUndo = () => {
     if (!canUndo) return;
     dispatchCounter({ type: 'undo' });
     playHaptic('tap', state.hapticsEnabled);
-  };
-
-  const handleNextCycle = () => {
-    dispatchCounter({ type: 'nextCycle' });
-    playHaptic('success', state.hapticsEnabled);
   };
 
   const handleSelectDhikr = (option: DhikrOption) => {
@@ -278,33 +293,11 @@ function CounterScreen() {
                   count={state.count}
                   target={state.target}
                   title={dhikr.title}
-                  cycle={state.cycle}
+                  completion={completion}
+                  effectsEnabled={state.visualEffectsEnabled}
                   onPress={handleIncrement}
                 />
               </View>
-
-              {isComplete ? (
-                <View style={styles.completionBanner}>
-                  <View style={styles.completionInfo}>
-                    <View style={styles.completionIconWrap}>
-                      <SparkleIcon size={16} color={theme.success} />
-                    </View>
-                    <View style={styles.completionCopy}>
-                      <Text style={styles.completionTitle}>اكتمل الورد</Text>
-                      <Text style={styles.completionSubtitle}>ابدأ دورة جديدة عندما تكون مستعدًا</Text>
-                    </View>
-                  </View>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="بدء الدورة التالية"
-                    onPress={handleNextCycle}
-                    style={({ pressed }) => [styles.nextCycleButton, pressed && styles.pressed]}
-                  >
-                    <Text style={styles.nextCycleText}>الدورة التالية</Text>
-                    <NextCycleIcon size={15} color={theme.onWarm} />
-                  </Pressable>
-                </View>
-              ) : null}
 
               <View style={styles.targetSection} accessibilityRole="radiogroup" accessibilityLabel="الهدف">
                 <View style={styles.targetHeading}>
@@ -435,11 +428,10 @@ function CounterScreen() {
             <FreeTapMode
               bottomInset={insets.bottom}
               count={state.count}
-              cycle={state.cycle}
+              completion={completion}
               dhikr={dhikr}
               effectsEnabled={state.visualEffectsEnabled}
               onExit={handleExitFullScreenTap}
-              onNextCycle={handleNextCycle}
               onTap={handleIncrement}
               target={state.target}
               topInset={insets.top}
@@ -497,7 +489,7 @@ function CounterScreen() {
         message={
           pendingDhikr
             ? `الانتقال إلى "${pendingDhikr.title}" سيُعيد العداد إلى الصفر. هل تريد المتابعة؟`
-            : 'سيُعاد عداد الدورة الحالية إلى الصفر. هل تريد المتابعة؟'
+            : 'سيُعاد عداد الجلسة الحالية إلى الصفر. هل تريد المتابعة؟'
         }
         confirmLabel={pendingDhikr ? 'تغيير وبدء جديد' : 'نعم، ابدأ من جديد'}
         onClose={() => {
@@ -687,61 +679,6 @@ function createStyles(theme: ThemeTokens) {
       alignItems: 'center',
       justifyContent: 'center',
       position: 'absolute',
-    },
-    completionBanner: {
-      alignItems: 'center',
-      backgroundColor: theme.successSurface,
-      borderColor: theme.successBorder,
-      borderRadius: 18,
-      borderWidth: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      maxWidth: 440,
-      paddingHorizontal: 13,
-      paddingVertical: 10,
-      width: '100%',
-    },
-    completionInfo: {
-      alignItems: 'center',
-      flexDirection: 'row',
-      flex: 1,
-      gap: 8,
-    },
-    completionIconWrap: {
-      alignItems: 'center',
-      backgroundColor: theme.successSurface,
-      borderRadius: 16,
-      height: 30,
-      justifyContent: 'center',
-      width: 30,
-    },
-    completionCopy: {
-      flex: 1,
-    },
-    completionTitle: {
-      color: theme.success,
-      fontSize: 13,
-      fontWeight: '800',
-    },
-    completionSubtitle: {
-      color: theme.textDim,
-      fontSize: 10.5,
-      marginTop: 2,
-    },
-    nextCycleButton: {
-      alignItems: 'center',
-      backgroundColor: theme.warm,
-      borderRadius: 12,
-      flexDirection: 'row',
-      gap: 5,
-      marginLeft: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 8,
-    },
-    nextCycleText: {
-      color: theme.onWarm,
-      fontSize: 11,
-      fontWeight: '800',
     },
     targetSection: {
       maxWidth: 440,

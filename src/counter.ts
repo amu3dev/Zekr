@@ -104,7 +104,6 @@ export type CounterState = {
   dhikrId: string;
   hapticsEnabled: boolean;
   visualEffectsEnabled: boolean;
-  cycle: number;
   totalSessionCount: number;
   fullScreenTap: boolean;
 };
@@ -113,7 +112,6 @@ export type CounterAction =
   | { type: 'increment' }
   | { type: 'undo' }
   | { type: 'reset' }
-  | { type: 'nextCycle' }
   | { type: 'resetAll' }
   | { type: 'setTarget'; target: number }
   | { type: 'setDhikr'; dhikrId: string }
@@ -128,13 +126,27 @@ export const initialCounterState: CounterState = {
   dhikrId: DHIKR_OPTIONS[0].id,
   hapticsEnabled: true,
   visualEffectsEnabled: true,
-  cycle: 1,
   totalSessionCount: 0,
   fullScreenTap: false,
 };
 
 export function isValidTarget(value: number): boolean {
   return Number.isInteger(value) && value >= MIN_TARGET && value <= MAX_TARGET;
+}
+
+/** Milestones are derived; target remains the user's selected base goal. */
+export function getMilestoneProgress(count: number, target: number) {
+  const baseTarget = isValidTarget(target) ? target : PRESET_TARGETS[0];
+  const validCount = Number.isSafeInteger(count) && count >= 0 &&
+    count <= Number.MAX_SAFE_INTEGER - MAX_TARGET ? count : 0;
+  const activeMilestone = Math.max(1, Math.ceil(validCount / baseTarget)) * baseTarget;
+  const intervalCount = validCount - (activeMilestone - baseTarget);
+  return {
+    activeMilestone,
+    intervalCount,
+    progress: intervalCount / baseTarget,
+    isMilestone: validCount > 0 && validCount % baseTarget === 0,
+  };
 }
 
 export function getDhikr(id: string): DhikrOption {
@@ -144,10 +156,11 @@ export function getDhikr(id: string): DhikrOption {
 export function counterReducer(state: CounterState, action: CounterAction): CounterState {
   switch (action.type) {
     case 'increment': {
+      if (state.count >= Number.MAX_SAFE_INTEGER - MAX_TARGET) return state;
       return {
         ...state,
         count: state.count + 1,
-        totalSessionCount: state.totalSessionCount + 1,
+        totalSessionCount: Math.min(Number.MAX_SAFE_INTEGER, state.totalSessionCount + 1),
       };
     }
     case 'undo': {
@@ -158,25 +171,16 @@ export function counterReducer(state: CounterState, action: CounterAction): Coun
         totalSessionCount: Math.max(0, state.totalSessionCount - 1),
       };
     }
-    case 'nextCycle': {
-      return {
-        ...state,
-        count: 0,
-        cycle: state.cycle + 1,
-      };
-    }
     case 'reset': {
       return {
         ...state,
         count: 0,
-        cycle: 1,
       };
     }
     case 'resetAll': {
       return {
         ...state,
         count: 0,
-        cycle: 1,
         totalSessionCount: 0,
       };
     }
@@ -190,7 +194,6 @@ export function counterReducer(state: CounterState, action: CounterAction): Coun
         ...state,
         dhikrId: selected.id,
         count: 0,
-        cycle: 1,
         target: selected.defaultTarget,
       };
     }
@@ -215,7 +218,7 @@ export function sanitizeCounterState(raw: unknown): CounterState {
   const fallback = initialCounterState;
 
   const count =
-    typeof data.count === 'number' && Number.isInteger(data.count) && data.count >= 0
+    typeof data.count === 'number' && Number.isSafeInteger(data.count) && data.count >= 0 && data.count <= Number.MAX_SAFE_INTEGER - MAX_TARGET
       ? data.count
       : fallback.count;
 
@@ -232,14 +235,9 @@ export function sanitizeCounterState(raw: unknown): CounterState {
       ? data.visualEffectsEnabled
       : fallback.visualEffectsEnabled;
 
-  const cycle =
-    typeof data.cycle === 'number' && Number.isInteger(data.cycle) && data.cycle >= 1
-      ? data.cycle
-      : 1;
-
   const totalSessionCount =
     typeof data.totalSessionCount === 'number' &&
-    Number.isInteger(data.totalSessionCount) &&
+    Number.isSafeInteger(data.totalSessionCount) &&
     data.totalSessionCount >= 0
       ? data.totalSessionCount
       : count;
@@ -253,7 +251,6 @@ export function sanitizeCounterState(raw: unknown): CounterState {
     dhikrId,
     hapticsEnabled,
     visualEffectsEnabled,
-    cycle,
     totalSessionCount,
     fullScreenTap,
   };
