@@ -44,7 +44,6 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
   const { activeMilestone, intervalCount, progress } = getMilestoneProgress(count, target);
   const cycle = getBeadCycle(count);
   const [pressScale] = useState(() => new Animated.Value(1));
-  const [countPop] = useState(() => new Animated.Value(1));
   const [rippleAnim] = useState(() => new Animated.Value(0));
   const [progressAnim] = useState(() => new Animated.Value(progress));
   const previousInterval = useRef({ activeMilestone, target });
@@ -71,17 +70,14 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
     if (reduceMotion) {
       pressScale.stopAnimation();
       pressScale.setValue(1);
-      countPop.stopAnimation();
-      countPop.setValue(1);
       rippleAnim.stopAnimation();
       rippleAnim.setValue(0);
     }
     return () => {
       pressScale.stopAnimation();
-      countPop.stopAnimation();
       rippleAnim.stopAnimation();
     };
-  }, [reduceMotion, pressScale, countPop, rippleAnim]);
+  }, [reduceMotion, pressScale, rippleAnim]);
 
   const runPressAnimation = () => {
     if (reduceMotion) return;
@@ -107,15 +103,6 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
 
   const handlePress = () => {
     if (!reduceMotion) {
-      countPop.stopAnimation();
-      countPop.setValue(1.08);
-      Animated.spring(countPop, {
-        toValue: 1,
-        useNativeDriver: true,
-        friction: 6,
-        tension: 150,
-      }).start();
-
       rippleAnim.stopAnimation();
       rippleAnim.setValue(0);
       Animated.timing(rippleAnim, {
@@ -142,7 +129,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
   });
 
   const digits = String(count).length;
-  const countFontSize = size * (digits <= 2 ? 0.23 : digits === 3 ? 0.19 : 0.15);
+  const countFontSize = size * (digits <= 2 ? 0.23 : digits === 3 ? 0.19 : Math.min(0.15, 0.54 / (digits * 0.8)));
   const progressDashOffset = progressAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [CIRCUMFERENCE, 0],
@@ -317,27 +304,31 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
         >
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.cyclePill}>
             <View style={styles.cycleDot} />
-            <Text style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
           </View>
 
-          <Animated.View style={{ transform: [{ scale: countPop }] }}>
+          {/* A bounded slot lets native auto-fit use both width and height. The
+              numeral run stays untransformed so Android fallback glyphs are stable. */}
+          <View style={{ width: size * 0.64 - 18, height: '43%', top: '28%', position: 'absolute', direction: 'ltr' }}>
             <Text
               style={[
                 styles.countText,
-                { fontSize: countFontSize, lineHeight: countFontSize * 1.14 },
+                { fontSize: countFontSize, width: '100%', height: '100%' },
               ]}
+              testID="central-counter-text"
+              adjustsFontSizeToFit
               numberOfLines={1}
             >
               {toArabicDigits(count)}
             </Text>
-          </Animated.View>
+          </View>
 
-          <Text style={styles.targetText}>
+          <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={styles.targetText}>
             {toArabicDigits(intervalCount)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(target)}
           </Text>
 
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.completionSlot}>
-            <Text style={styles.completeStatusText}>{completion ?? ' '}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={styles.completeStatusText}>{completion ?? ' '}</Text>
           </View>
         </Pressable>
       </Animated.View>
@@ -379,9 +370,12 @@ function createStyles(theme: ThemeTokens) {
       borderRadius: 14,
       flexDirection: 'row',
       gap: 5,
-      marginBottom: 7,
+      position: 'absolute',
+      top: '6%',
+      height: '17%',
+      width: '90%',
       paddingHorizontal: 11,
-      paddingVertical: 4,
+      paddingVertical: 2,
     },
     cycleDot: {
       backgroundColor: theme.warm,
@@ -390,6 +384,10 @@ function createStyles(theme: ThemeTokens) {
       width: 5,
     },
     cyclePillText: {
+      flex: 1,
+      minWidth: 0,
+      height: '100%',
+      textAlignVertical: 'center',
       color: theme.warm,
       fontSize: 11,
       fontWeight: '800',
@@ -397,8 +395,10 @@ function createStyles(theme: ThemeTokens) {
     countText: {
       color: theme.warmBright,
       fontWeight: '800',
-      includeFontPadding: false,
-      letterSpacing: -1.5,
+      includeFontPadding: true,
+      letterSpacing: 0,
+      textAlignVertical: 'center',
+      writingDirection: 'ltr',
       textAlign: 'center',
       ...Platform.select({
         ios: {
@@ -406,14 +406,19 @@ function createStyles(theme: ThemeTokens) {
           textShadowOffset: { width: 0, height: 2 },
           textShadowRadius: 9,
         },
-        android: {},
+        android: { fontFamily: 'sans-serif' },
       }),
     },
     targetText: {
       color: theme.textMuted,
       fontSize: 14,
       fontWeight: '600',
-      marginTop: 7,
+      position: 'absolute',
+      bottom: '14%',
+      height: '13%',
+      textAlignVertical: 'center',
+      textAlign: 'center',
+      width: '100%',
     },
     targetSeparator: {
       color: theme.textDim,
@@ -421,11 +426,16 @@ function createStyles(theme: ThemeTokens) {
       fontWeight: '500',
     },
     completionSlot: {
-      height: 24,
+      position: 'absolute',
+      bottom: '3%',
+      height: '9%',
+      width: '90%',
       justifyContent: 'center',
-      marginTop: 4,
     },
     completeStatusText: {
+      height: '100%',
+      textAlign: 'center',
+      textAlignVertical: 'center',
       color: theme.success,
       fontSize: 10.5,
       fontWeight: '800',

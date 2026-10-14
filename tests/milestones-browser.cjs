@@ -193,6 +193,24 @@ fs.mkdirSync(output, { recursive: true });
   assert.deepEqual(await page.evaluate(() => window.qa.haptics), ['tap', 'tap', 'tap']);
   assert.equal(await page.getByText('اكتمل الهدف', {exact: false}).count(), 0);
   results.push('Goal 1 in both modes: count increments with ordinary tap haptics and no repeated completion text or announcements.');
+  // Rendering regression: use the real reducer callback across the reported values.
+  await page.reload();
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('@dhikr/counter-state/v1', JSON.stringify({ count: 32, target: 33, visualEffectsEnabled: true }));
+  });
+  await mount();
+  let previousCount = 32;
+  for (const count of [33, 66, 67, 99, 100, 103, 132, 133, 137, 999, 1000]) {
+    await burst(count - previousCount);
+    await value(counter(), count, 33);
+    const text = page.getByTestId('central-counter-text');
+    const box = await text.boundingBox();
+    assert.ok(box && box.width > 0 && box.height > 0);
+    assert.equal(await text.textContent(), String(count).replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]));
+    previousCount = count;
+  }
+  results.push('Reported Android counts: exact cumulative Arabic-Indic text at 33, 66, 67, 99, 100, 103, 132, 133, 137, 999 and 1000. Native font fitting is tested separately on Android.');
   assert.deepEqual(errors, []);
   await browser.close();
   fs.writeFileSync(output + '/browser-qa-results.json', JSON.stringify({environment: 'Actual app rendered through React Native Web in Chromium, mocked native APIs. No physical device or native simulator testing.', results}, null, 2));
