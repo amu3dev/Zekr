@@ -11,13 +11,13 @@ const esbuild = require(resolveQA('esbuild'));
 const { chromium } = require(process.env.ZEKR_QA_PLAYWRIGHT || resolveQA('playwright'));
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'zekr-launch-qa-'));
 const mocks = {
-  "rn.ts": "export * from 'react-native-web';\nconst listeners = new Set<(value: string) => void>();\nconst motionListeners = new Set<(value: boolean) => void>();\nexport const AppState = { currentState: 'active', addEventListener: (_: string, fn: (value: string) => void) => { listeners.add(fn); return { remove: () => listeners.delete(fn) }; } };\nexport const AccessibilityInfo = { isReduceMotionEnabled: () => new Promise<boolean>(resolve => setTimeout(() => resolve(matchMedia('(prefers-reduced-motion: reduce)').matches), (window as any).qa.motionDelay || 0)), addEventListener: (_: string, fn: (value: boolean) => void) => { motionListeners.add(fn); return { remove: () => motionListeners.delete(fn) }; } };\n(window as any).qa = { background: () => listeners.forEach(fn => fn('background')), foreground: () => listeners.forEach(fn => fn('active')), starts: [], reduce: () => motionListeners.forEach(fn => fn(true)) };\nimport { Animated } from 'react-native-web';\nconst parallel = Animated.parallel; Animated.parallel = (items: any[], config: any) => { if (items.length > 12) (window as any).qa.starts.push(performance.now()); return parallel(items, config); };\n(window as any).qa.failAnimation = () => { const original = Animated.parallel; Animated.parallel = (animations: any[], config: any) => { if (animations.length > 12) throw new Error('QA: launch animation unavailable'); return original(animations, config); }; };\n(window as any).qa.unknownMotion = () => { AccessibilityInfo.isReduceMotionEnabled = () => new Promise(() => {}); };\n",
+  "rn.ts": "export * from 'react-native-web';\nconst listeners = new Set<(value: string) => void>();\nconst motionListeners = new Set<(value: boolean) => void>();\nexport const AppState = { currentState: 'active', addEventListener: (_: string, fn: (value: string) => void) => { listeners.add(fn); return { remove: () => listeners.delete(fn) }; } };\nexport const AccessibilityInfo = { announceForAccessibility: (message: string) => { ((window as any).qa.announcements ??= []).push(message); }, isReduceMotionEnabled: () => new Promise<boolean>(resolve => setTimeout(() => resolve(matchMedia('(prefers-reduced-motion: reduce)').matches), (window as any).qa.motionDelay || 0)), addEventListener: (_: string, fn: (value: boolean) => void) => { motionListeners.add(fn); return { remove: () => motionListeners.delete(fn) }; } };\n(window as any).qa = { background: () => listeners.forEach(fn => fn('background')), foreground: () => listeners.forEach(fn => fn('active')), starts: [], reduce: () => motionListeners.forEach(fn => fn(true)) };\nimport { Animated } from 'react-native-web';\nconst parallel = Animated.parallel; Animated.parallel = (items: any[], config: any) => { if (items.length > 12) (window as any).qa.starts.push(performance.now()); return parallel(items, config); };\n(window as any).qa.failAnimation = () => { const original = Animated.parallel; Animated.parallel = (animations: any[], config: any) => { if (animations.length > 12) throw new Error('QA: launch animation unavailable'); return original(animations, config); }; };\n(window as any).qa.unknownMotion = () => { AccessibilityInfo.isReduceMotionEnabled = () => new Promise(() => {}); };\n",
   "safe.tsx": "import React from 'react';\nexport const useSafeAreaInsets = () => ({top: 24, bottom: 24, left:0, right:0});\nexport const SafeAreaProvider = ({children}: any) => <>{children}</>;\n",
   "splash.ts": "export const preventAutoHideAsync = async () => {};\nexport const hideAsync = async () => { (window as any).nativeHides = ((window as any).nativeHides || 0) + 1; (window as any).hideAt = performance.now(); };\nexport const setOptions = () => {};\n",
   "haptics.ts": "export const NotificationFeedbackType = { Success:'success', Warning:'warning' };\nexport const ImpactFeedbackStyle = { Light:'tap' };\nexport const notificationAsync = async (value: string) => { ((window as any).qa.haptics ??= []).push(value); };\nexport const impactAsync = async (value: string) => { ((window as any).qa.haptics ??= []).push(value); };\n"
 };
 for (const [name, source] of Object.entries(mocks)) fs.writeFileSync(path.join(scratch, name), source);
-fs.writeFileSync(path.join(scratch, 'entry.tsx'), `import React from 'react'; import { createRoot } from 'react-dom/client'; import App from ${JSON.stringify(path.join(root, 'App.tsx'))}; window.mountApp = () => createRoot(document.getElementById('root')).render(<App/>);`);
+fs.writeFileSync(path.join(scratch, 'entry.tsx'), `import React from 'react'; import { createRoot } from 'react-dom/client'; import App from ${JSON.stringify(path.join(root, 'App.tsx'))}; window.mountApp = (strict = false) => createRoot(document.getElementById('root')).render(strict ? <React.StrictMode><App/></React.StrictMode> : <App/>);`);
 esbuild.buildSync({
   entryPoints: [path.join(scratch, 'entry.tsx')], bundle: true, outfile: path.join(scratch, 'bundle.js'), jsx: 'automatic',
   nodePaths: [qaModules, path.join(root, 'node_modules')],
@@ -26,7 +26,7 @@ esbuild.buildSync({
   define: { global: 'globalThis', __DEV__: 'true', 'process.env.NODE_ENV': '"development"', 'process.env.EXPO_OS': '"web"' },
 });
 const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
-const output = path.join(root, 'docs', 'launch');
+const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
 fs.mkdirSync(output, { recursive: true });
 (async()=>{
  const browser=await chromium.launch({headless:true,...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
@@ -57,6 +57,13 @@ fs.mkdirSync(output, { recursive: true });
  assert.equal(await first.page.evaluate(()=>window.nativeHides),1);
  results.push('Normal launch exits; background/foreground does not replay; native hide called once.');
  const video=first.page.video();await first.context.close();await video.saveAs(output+'/launch-browser.webm');
+ const strict=await pageFor();await strict.page.evaluate(()=>window.mountApp(true));
+ await strict.page.waitForFunction(()=>window.nativeHides===1);
+ await strict.page.getByRole('button',{name:'تخطي المقدمة'}).waitFor({state:'detached'});
+ assert.equal(await strict.page.evaluate(()=>window.nativeHides),1);
+ assert.equal(await strict.page.evaluate(()=>window.qa.starts.length),1);
+ assert.equal(await strict.page.evaluate(()=>(window.qa.haptics||[]).length),0);
+ results.push('StrictMode effect replay still completes launch, starts the reveal once and hides native splash once without counting.');await strict.context.close();
  const skip=await pageFor();await skip.page.evaluate(()=>window.mountApp());
  await skip.page.getByRole('button',{name:'تخطي المقدمة'}).click();
  assert.equal(await skip.page.getByRole('button',{name:'تخطي المقدمة'}).count(),0);
@@ -133,5 +140,5 @@ fs.mkdirSync(output, { recursive: true });
  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await hold.page.waitForTimeout(500);
  assert.equal(await hold.page.evaluate(()=>JSON.parse(localStorage.getItem('@dhikr/counter-state/v1')).count),0);
  results.push('Holding a launch tap beyond the animation deadline keeps the responder and does not increment home.');await hold.context.close();
- await browser.close();fs.writeFileSync(output+'/browser-qa-results.json',JSON.stringify({environment:'Actual App + LaunchExperience via React Native Web; mocked native splash, safe area and OS events. Not Android validation.',results},null,2));console.log(results.join('\n'));
+ await browser.close();fs.writeFileSync(output+'/browser-qa-results.json',JSON.stringify({environment:'Actual App + LaunchExperience via React Native Web; mocked native splash, safe area and OS events. Not Android validation.',results},null,2));console.log(results.join('\n'));console.log(`QA artifacts: ${output}`);
 })();

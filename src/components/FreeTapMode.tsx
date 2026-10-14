@@ -61,7 +61,7 @@ export function FreeTapMode({
   const [rippleAnim] = useState(() => new Animated.Value(0));
   const [countPulse] = useState(() => new Animated.Value(1));
 
-  const { activeMilestone, progress } = getMilestoneProgress(count, target);
+  const { intervalCount, progress } = getMilestoneProgress(count, target);
   const cycle = getBeadCycle(count);
   const safeHeight = Math.max(360, height - topInset - bottomInset);
   const ringSize = Math.round(Math.max(194, Math.min(width - 48, 300, safeHeight * 0.42)));
@@ -120,7 +120,7 @@ export function FreeTapMode({
         accessibilityRole="button"
         accessibilityLabel="النقر الحر"
         accessibilityHint="اضغط في أي مكان لزيادة العدّ"
-        accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)}` }}
+        accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(intervalCount)} من ${toArabicDigits(target)} في الهدف الحالي` }}
         onPress={handleTap}
         style={({ pressed }) => [styles.tapSurface, effectsEnabled && pressed && styles.tapSurfacePressed]}
       />
@@ -238,8 +238,8 @@ export function FreeTapMode({
                 {toArabicDigits(count)}
               </Text>
               <Text style={styles.progressText}>
-                {toArabicDigits(count)} <Text style={styles.progressSeparator}>من</Text>{' '}
-                {toArabicDigits(activeMilestone)}
+                {toArabicDigits(intervalCount)} <Text style={styles.progressSeparator}>من</Text>{' '}
+                {toArabicDigits(target)}
               </Text>
               <Text style={styles.cycleText}>{getCycleText(cycle)}</Text>
               <Text style={styles.completionText}>{completion ?? ' '}</Text>

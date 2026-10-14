@@ -10,8 +10,8 @@ Both counting modes treated `count >= target` as a lasting completion condition,
 - `activeMilestone = Math.max(1, Math.ceil(count / baseTarget)) * baseTarget`.
 - Interval progress is `(count - (activeMilestone - baseTarget)) / baseTarget`. Zero count is zero progress; an exact boundary is full progress.
 - The 33 beads use `count === 0 ? 0 : ((count - 1) % 33) + 1`; their cycle uses `Math.max(1, Math.ceil(count / 33))`.
-- The outer ring sits outside the beads. The cumulative center value and Arabic-Indic count/milestone label remain visible.
-- A milestone tap shows restrained text for 900 ms, announces the milestone, and uses the existing enabled haptic feedback. The next tap clears the text immediately. Counting is never delayed or reset by completion.
+- The outer ring sits outside the beads. The large center value remains cumulative; the label shows interval count out of the selected base goal, matching the arc. Accessibility values include both the cumulative count and interval progress.
+- A milestone tap shows restrained text for 900 ms, announces the milestone, and uses the existing enabled haptic feedback. A base goal of 1 uses ordinary tap haptics without completion text or announcements in either mode. The next tap clears the text immediately. Counting is never delayed or reset by completion.
 - Feedback runs only from an increment event, never restoration or render effects. The persistent panel, manual transition action and indefinite completion pulse are removed.
 - No milestone or bead-cycle state is persisted. Old `cycle` metadata is ignored; existing count, target, aggregate count, dhikr and settings remain readable under the same storage key.
 - Undo, reset and goal changes derive all progress from their resulting count and target. Free Tap uses the same calculations and event handler.
@@ -31,6 +31,14 @@ Both counting modes treated `count >= target` as a lasting completion condition,
 - `docs/milestones/`: this report, browser results and five screenshots.
 
 Theme Gallery, theme storage and native splash configuration were not modified.
+
+## Review fixes — 2026-10-13
+
+- Both modes show interval progress beneath the cumulative count; accessibility values distinguish the two.
+- Goal 1 uses ordinary tap feedback without repeated completion messages or announcements.
+- The visual-effects setting names both counting modes; the obsolete next-cycle icon and README wording were removed.
+- `npm run android` selects development permissions; browser harnesses write to temporary folders by default.
+- Typecheck, lint, all nine unit tests and both browser suites passed. Updated main-ring and Free Tap captures were visually inspected. Development and preview Expo configs were checked for allowed and blocked internet access respectively; no native build or device run was performed.
 
 ## Checks and results
 
@@ -55,6 +63,8 @@ npm run test:milestones
 ```
 
 ## Visually inspected evidence
+
+The committed captures below are historical evidence from before the review fixes. Current labels show interval progress (for example, 11 of 33 below a cumulative count of 44). New browser runs write to unique temporary folders and print the artifact path; `ZEKR_QA_OUTPUT` explicitly selects another destination.
 
 - [Milestone 33 acknowledgment](33-complete-browser.png)
 - [44 of 66: eleven beads and one-third interval progress](44-of-66-browser.png)

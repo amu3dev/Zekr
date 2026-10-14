@@ -41,7 +41,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const reduceMotion = useReducedMotion() !== false || !effectsEnabled;
-  const { activeMilestone, progress } = getMilestoneProgress(count, target);
+  const { activeMilestone, intervalCount, progress } = getMilestoneProgress(count, target);
   const cycle = getBeadCycle(count);
   const [pressScale] = useState(() => new Animated.Value(1));
   const [countPop] = useState(() => new Animated.Value(1));
@@ -302,7 +302,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`عدّاد ${title}`}
-          accessibilityValue={{ text: `${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)}` }}
+          accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(intervalCount)} من ${toArabicDigits(target)} في الهدف الحالي` }}
           accessibilityHint={`اضغط للتسبيح، ${getCycleText(cycle)}، ${toArabicDigits(getActiveBeadCount(count))} من ٣٣ حبة`}
           accessibilityState={{ disabled }}
           disabled={disabled}
@@ -333,7 +333,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
           </Animated.View>
 
           <Text style={styles.targetText}>
-            {toArabicDigits(count)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(activeMilestone)}
+            {toArabicDigits(intervalCount)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(target)}
           </Text>
 
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.completionSlot}>

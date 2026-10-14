@@ -81,9 +81,9 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 ## ✨ Key Features
 
 ### 📿 1. Interactive Adaptive Tasbeeh Ring
-- **Goal-Aware Prayer Beads**: A compact ring of luminous beads inspired by traditional misbaha prayer beads. Completed beads become distinct while upcoming beads stay subdued; the animated progress arc preserves precise progress for targets from 33 to 1000 and custom goals.
+- **Prayer Beads & Goal Progress**: The 33 beads light up once per tap and repeat automatically. The outer arc and its label show progress within the selected goal interval; the large number keeps the cumulative count.
 - **Micro-Animations & Physics**: Fluid spring recoil (`Animated.spring`) on touch, restrained light-wave ripples, and a subtle number pop on every increment, with reduced-motion support.
-- **Target Completion Flourish**: Soft rhythmic pulse animation and subtle success haptic vibration upon completing your goal.
+- **Target Completion Feedback**: A brief completion message and success haptic at each multiple of the selected goal. Goals of 1 use ordinary tap feedback without repeated completion messages or announcements.
 
 ### 🌟 2. Sacred Islamic Geometric Backdrop
 - An SVG vector background featuring the **8-Pointed Islamic Star** (*Khatam Suleiman*) and arabesque framing with a gentle theme-aware ambient glow.
@@ -93,10 +93,10 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 - Clear English transliterations and translations to empower non-native Arabic speakers.
 - Grouped into meaningful categories (*Taspbih*, *Comprehensive Remembrance*, *Istighfar*, *Salawat*).
 
-### 🔁 4. Cycle Tracking & Lifetime Session Stats
-- Displays current cycle progression (*Round 1, Round 2, Round 3...*).
+### 🔁 4. Automatic Milestones & Lifetime Session Stats
+- Displays the current 33-bead round (*Round 1, Round 2, Round 3...*), independently of the selected goal.
 - All-time session tally formatted with authentic Arabic numerals (`١،٢٥٠`).
-- Allows seamless one-tap transition to start the next cycle when you finish a round.
+- Continues counting automatically through every goal milestone, without resetting the count or requiring a next-cycle button.
 
 ### 📱 5. Full-Screen Tap Mode (Eyes-Free Tasbeeh)
 - Toggle full-screen mode to tap anywhere on your display without having to aim for the center circle. Ideal for walking, night reflection, or quiet remembrance.

@@ -158,12 +158,14 @@ function CounterScreen() {
     const next = dispatchCounter({ type: 'increment' });
     if (next.count === previousCount) return;
     const { isMilestone, activeMilestone } = getMilestoneProgress(next.count, next.target);
-    if (isMilestone) {
+    // A one-count goal completes on every tap; keep its feedback quiet.
+    const celebrate = isMilestone && next.target > 1;
+    if (celebrate) {
       const message = `اكتمل الهدف ${toArabicDigits(activeMilestone)}`;
       setCompletion(message);
       AccessibilityInfo.announceForAccessibility(message);
     }
-    playHaptic(isMilestone ? 'success' : 'tap', next.hapticsEnabled);
+    playHaptic(celebrate ? 'success' : 'tap', next.hapticsEnabled);
   };
 
   const handleUndo = () => {

@@ -26,18 +26,18 @@ export function LaunchExperience({ ready, onFinish }: Props) {
   const [foreground, setForeground] = useState(AppState.currentState === 'active');
   const readyAt = useRef<number | null>(null);
   const started = useRef(false);
+  const mounted = useRef(false);
   const completed = useRef(false);
   const pressing = useRef(false);
   const animation = useRef<Animated.CompositeAnimation | null>(null);
   const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [opacity] = useState(() => new Animated.Value(1));
-  const [emblem] = useState(() => new Animated.Value(1));
   const [glow] = useState(() => new Animated.Value(0));
   const [word] = useState(() => new Animated.Value(0));
   const [beads] = useState(() => BEADS.map(() => new Animated.Value(0)));
 
   const finish = useCallback(() => {
-    if (completed.current) return;
+    if (!mounted.current || completed.current) return;
     completed.current = true;
     const running = animation.current;
     animation.current = null;
@@ -56,15 +56,21 @@ export function LaunchExperience({ ready, onFinish }: Props) {
   };
 
   useEffect(() => {
+    mounted.current = true;
     const subscription = AppState.addEventListener('change', (value) => {
       setForeground(value === 'active');
       if (value !== 'active') finish();
     });
     return () => {
-      completed.current = true;
+      // Cleanup also runs during StrictMode's setup/cleanup/setup check.
+      // Only finish marks the intro complete; a new setup can resume it.
+      mounted.current = false;
       subscription.remove();
       if (watchdog.current) clearTimeout(watchdog.current);
+      watchdog.current = null;
       try { animation.current?.stop(); } catch { /* Already unmounted. */ }
+      animation.current = null;
+      started.current = false;
     };
   }, [finish]);
 
@@ -72,8 +78,10 @@ export function LaunchExperience({ ready, onFinish }: Props) {
     if (!ready || completed.current || pressing.current) return;
     if (readyAt.current === null) {
       readyAt.current = Date.now();
-      // Native handoff is owned by home, independently of this bounded intro.
-      watchdog.current = setTimeout(finish, DURATION + 80);
+    }
+    // Resume the original deadline after effect cleanup; never extend it.
+    if (watchdog.current === null) {
+      watchdog.current = setTimeout(finish, Math.max(0, DURATION + 80 - (Date.now() - readyAt.current)));
     }
     if (reduced === true) {
       opacity.setValue(0);
@@ -92,11 +100,9 @@ export function LaunchExperience({ ready, onFinish }: Props) {
         easing: Easing.inOut(Easing.quad), useNativeDriver: true, isInteraction: false,
       });
     try {
-      emblem.setValue(0.82);
       animation.current = remaining <= 180
         ? Animated.timing(opacity, { toValue: 0, duration: remaining, useNativeDriver: true, isInteraction: false })
         : Animated.parallel([
-          timing(emblem, 1, 200),
           timing(glow, 1, 380, 100),
           ...beads.map((value, index) => timing(value, 1, 140, 60 + index * 28)),
           timing(word, 1, 240, 260),
@@ -115,7 +121,7 @@ export function LaunchExperience({ ready, onFinish }: Props) {
         queueMicrotask(finish);
       }
     }
-  }, [beads, emblem, finish, foreground, glow, opacity, ready, reduced, word]);
+  }, [beads, finish, foreground, glow, opacity, ready, reduced, word]);
 
   return (
     <Animated.View style={[styles.overlay, { opacity }]}>
@@ -133,7 +139,7 @@ export function LaunchExperience({ ready, onFinish }: Props) {
         <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.artwork}>
           <View style={styles.emblemFrame}>
             <Animated.View style={[styles.glow, { opacity: glow }]}><View style={styles.glowCore} /></Animated.View>
-            <Animated.View style={{ opacity: emblem }}>
+            <View>
               <Svg width={IMAGE_SIZE} height={IMAGE_SIZE} viewBox="0 0 1024 1024">
                 <Circle cx="512" cy="512" r="236" fill="none" stroke="#5369AD" strokeWidth="12" opacity="0.82" />
                 <Path d="M512 276v20M748 512h-20M512 748v-20M276 512h20" stroke={GOLD} strokeWidth="8" strokeLinecap="round" opacity="0.9" />
@@ -145,7 +151,7 @@ export function LaunchExperience({ ready, onFinish }: Props) {
                   <Circle cx="512" cy="424" r="24" fill={GOLD} stroke="#FFE9B9" strokeWidth="6" />
                 </G>
               </Svg>
-            </Animated.View>
+            </View>
             {BEADS.map(([x, y], index) => (
               <Animated.View key={index} style={[styles.bead, {
                 left: x * IMAGE_SIZE / 1024 - 7, top: y * IMAGE_SIZE / 1024 - 7,
@@ -169,7 +175,6 @@ const styles = StyleSheet.create({
   overlay: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: SAPPHIRE, zIndex: 100 },
   artwork: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   emblemFrame: { width: IMAGE_SIZE, height: IMAGE_SIZE },
-  emblem: { width: IMAGE_SIZE, height: IMAGE_SIZE },
   glow: { position: 'absolute', left: 76, top: 76, width: 88, height: 88, borderRadius: 44, backgroundColor: '#F0CF9108', alignItems: 'center', justifyContent: 'center' },
   glowCore: { width: 58, height: 58, borderRadius: 29, backgroundColor: '#F0CF910A' },
   bead: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: '#FFE9B9', borderWidth: 2, borderColor: GOLD },

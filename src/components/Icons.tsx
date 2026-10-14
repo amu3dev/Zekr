@@ -127,17 +127,6 @@ export function FullScreenIcon({ size = 20, color }: IconProps) {
   );
 }
 
-export function NextCycleIcon({ size = 20, color }: IconProps) {
-  const { theme } = useTheme();
-  const stroke = color ?? theme.onWarm;
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M5 12h14" />
-      <Path d="m12 5 7 7-7 7" />
-    </Svg>
-  );
-}
-
 /** Small geometric clasp used as a quiet visual signature for the dhikr card. */
 export function RosetteClasp({ size = 32 }: { size?: number }) {
   const { theme } = useTheme();

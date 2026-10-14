@@ -449,12 +449,12 @@ export function SettingsModal({
               importantForAccessibility="no-hide-descendants"
               style={styles.settingCopy}
             >
-              <Text style={styles.settingTitle}>مؤثرات النقر الحر</Text>
-              <Text style={styles.settingDesc}>نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر</Text>
+              <Text style={styles.settingTitle}>المؤثرات البصرية</Text>
+              <Text style={styles.settingDesc}>حركة التقدم ونبضة هادئة مع كل عدّة في العداد والنقر الحر</Text>
             </View>
             <Switch
-              accessibilityLabel="مؤثرات النقر الحر"
-              accessibilityHint="نبضة بصرية هادئة مع كل عدّة في وضع النقر الحر"
+              accessibilityLabel="المؤثرات البصرية"
+              accessibilityHint="تشغيل حركة التقدم ونبضات العدّ في العداد والنقر الحر أو إيقافها"
               value={visualEffectsEnabled}
               onValueChange={onToggleVisualEffects}
               trackColor={{ false: theme.track, true: theme.accent }}
