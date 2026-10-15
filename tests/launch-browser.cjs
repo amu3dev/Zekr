@@ -122,9 +122,9 @@ fs.mkdirSync(output, { recursive: true });
  await gallery.page.getByRole('button',{name:'القائمة والإعدادات'}).click();
  await gallery.page.getByRole('button',{name:/استعراض المظاهر/}).click();
  await gallery.page.getByRole('radiogroup',{name:'المظاهر'}).waitFor();
- assert.equal(await gallery.page.getByRole('radiogroup',{name:'المظاهر'}).getByRole('radio').count(),3);
+ assert.equal(await gallery.page.getByRole('radiogroup',{name:'المظاهر'}).getByRole('radio').count(),6);
  await gallery.page.screenshot({path:output+'/theme-gallery-browser.png'});
- results.push('Gallery exposes a labelled radio group with three selectable themes.');await gallery.context.close();
+ results.push('Gallery exposes a labelled radio group with six selectable themes.');await gallery.context.close();
 
  const delayed=await pageFor();await delayed.page.evaluate(()=>{window.qa.motionDelay=250;window.mountApp();});
  await delayed.page.waitForFunction(()=>window.nativeHides===1);

@@ -437,8 +437,8 @@ export function SettingsModal({
               accessibilityHint="نبضة خفيفة عند كل تسبيحة وعند إتمام الهدف"
               value={hapticsEnabled}
               onValueChange={onToggleHaptics}
-              trackColor={{ false: theme.track, true: theme.accent }}
-              thumbColor={hapticsEnabled ? theme.warm : theme.textMuted}
+              trackColor={{ false: theme.track, true: theme.switchActiveTrack ?? theme.accent }}
+              thumbColor={hapticsEnabled ? (theme.switchActiveThumb ?? theme.warm) : theme.textMuted}
             />
           </View>
 
@@ -459,8 +459,8 @@ export function SettingsModal({
               accessibilityHint="تشغيل حركة التقدم ونبضات العدّ في العداد والنقر الحر أو إيقافها"
               value={visualEffectsEnabled}
               onValueChange={onToggleVisualEffects}
-              trackColor={{ false: theme.track, true: theme.accent }}
-              thumbColor={visualEffectsEnabled ? theme.warm : theme.textMuted}
+              trackColor={{ false: theme.track, true: theme.switchActiveTrack ?? theme.accent }}
+              thumbColor={visualEffectsEnabled ? (theme.switchActiveThumb ?? theme.warm) : theme.textMuted}
             />
           </View>
 
@@ -481,8 +481,8 @@ export function SettingsModal({
               accessibilityHint="المس أي مكان بالشاشة لزيادة العدّ دون النظر"
               value={fullScreenTap}
               onValueChange={onToggleFullScreenTap}
-              trackColor={{ false: theme.track, true: theme.accent }}
-              thumbColor={fullScreenTap ? theme.warm : theme.textMuted}
+              trackColor={{ false: theme.track, true: theme.switchActiveTrack ?? theme.accent }}
+              thumbColor={fullScreenTap ? (theme.switchActiveThumb ?? theme.warm) : theme.textMuted}
             />
           </View>
 

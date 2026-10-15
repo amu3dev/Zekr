@@ -219,7 +219,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
 
         <G>
           {beads.map((bead) => (
-            <G key={bead.id} opacity={bead.isActive ? 1 : 0.52}>
+            <G key={bead.id} opacity={bead.isActive ? 1 : (theme.beadInactiveOpacity ?? 0.52)}>
               {bead.isActive && (
                 <Circle
                   cx={bead.bx}
@@ -234,7 +234,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
                 cy={bead.by}
                 r={BEAD_SIZE}
                 fill={bead.isActive ? 'url(#activeBeadSphere)' : 'url(#inactiveBeadSphere)'}
-                stroke={bead.isActive ? theme.warmBright : theme.accentMuted}
+                stroke={theme.beadOutline ?? (bead.isActive ? theme.warmBright : theme.accentMuted)}
                 strokeWidth={0.6}
               />
             </G>
