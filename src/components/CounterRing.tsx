@@ -289,8 +289,8 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`عدّاد ${title}`}
-          accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(intervalCount)} من ${toArabicDigits(target)} في الهدف الحالي` }}
-          accessibilityHint={`اضغط للتسبيح، ${getCycleText(cycle)}، ${toArabicDigits(getActiveBeadCount(count))} من ٣٣ حبة`}
+          accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)} في الهدف الحالي` }}
+          accessibilityHint={`اضغط للتسبيح، ${getCycleText(cycle)}، ${toArabicDigits(getActiveBeadCount(count))} من ٣٣ حبة، تقدّم الحلقة في الفترة الحالية: ${toArabicDigits(intervalCount)} من ${toArabicDigits(target)}`}
           accessibilityState={{ disabled }}
           disabled={disabled}
           onPressIn={runPressAnimation}
@@ -326,7 +326,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
           </View>
 
           <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={styles.targetText}>
-            {toArabicDigits(intervalCount)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(target)}
+            {toArabicDigits(count)} <Text style={styles.targetSeparator}>من</Text> {toArabicDigits(activeMilestone)}
           </Text>
 
           <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.completionSlot}>

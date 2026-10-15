@@ -262,6 +262,8 @@ export type ThemeContextValue = {
   theme: ThemeTokens;
   setThemeId: (themeId: ThemeId) => void;
   isReady: boolean;
+  hydration: 'loading' | 'ready' | 'error';
+  saveStatus: 'saved' | 'pending' | 'saving' | 'error';
 };
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);

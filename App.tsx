@@ -3,10 +3,9 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
-  AppState,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +20,8 @@ import { toArabicDigits } from './src/arabic';
 import { CounterRing } from './src/components/CounterRing';
 import { FreeTapMode } from './src/components/FreeTapMode';
 import { LaunchExperience } from './src/components/LaunchExperience';
+import { StorageNotice } from './src/components/StorageNotice';
+import { usePersistentState } from './src/hooks/usePersistentState';
 import {
   BookIcon,
   ChevronDownIcon,
@@ -45,13 +46,12 @@ import {
   DhikrOption,
   getDhikr,
   getMilestoneProgress,
-  initialCounterState,
   PRESET_TARGETS,
 } from './src/counter';
 import { ThemeProvider } from './src/ThemeProvider';
 import { useTheme } from './src/theme';
 import type { ThemeTokens } from './src/theme';
-import { loadCounterState, saveCounterState } from './src/storage';
+import { counterPersistence, themePersistence } from './src/storage';
 
 // Keep the native Midnight Sapphire launch identity in place until both the
 // persisted theme and the counter state are ready to render the first frame.
@@ -82,12 +82,15 @@ function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
 }
 
 function CounterScreen() {
-  const { isReady: isThemeReady, theme } = useTheme();
+  const { isReady: isThemeReady, theme, hydration: themeHydration, saveStatus: themeSaveStatus } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const [state, dispatch] = useReducer(counterReducer, initialCounterState);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { value: state, hydration, saveStatus } = usePersistentState(counterPersistence);
+  const isLoaded = hydration === 'ready';
+  const hasHydrationError = hydration === 'error' || themeHydration === 'error';
+  const hasSaveError = saveStatus === 'error' || themeSaveStatus === 'error';
+  const [isRecoveryLaidOut, setIsRecoveryLaidOut] = useState(false);
   const [isHomeLaidOut, setIsHomeLaidOut] = useState(false);
   const [launchVisible, setLaunchVisible] = useState(true);
   const finishLaunch = useCallback(() => setLaunchVisible(false), []);
@@ -96,14 +99,11 @@ function CounterScreen() {
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
 
   const [completion, setCompletion] = useState<string | null>(null);
-  const stateRef = useRef(state);
   // Track queued actions with the same reducer, so feedback and background
   // flushes see every tap even before React commits a batch.
   const dispatchCounter = useCallback((action: CounterAction) => {
     setCompletion(null);
-    const next = counterReducer(stateRef.current, action);
-    stateRef.current = next;
-    dispatch(action);
+    const next = counterPersistence.update((current) => counterReducer(current, action));
     return next;
   }, []);
 
@@ -114,37 +114,17 @@ function CounterScreen() {
   }, [completion]);
 
   useEffect(() => {
-    loadCounterState().then((saved) => {
-      if (saved) dispatchCounter({ type: 'restore', state: saved });
-      setIsLoaded(true);
-    });
-  }, [dispatchCounter]);
-
-  useEffect(() => {
-    if (isLoaded && isThemeReady && isHomeLaidOut && !nativeHidden.current) {
+    const canShowHome = isLoaded && isThemeReady && isHomeLaidOut;
+    if ((canShowHome || (hasHydrationError && isRecoveryLaidOut)) && !nativeHidden.current) {
       nativeHidden.current = true;
       SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [isHomeLaidOut, isLoaded, isThemeReady]);
+  }, [isHomeLaidOut, isLoaded, isThemeReady, hasHydrationError, isRecoveryLaidOut]);
 
-  // Debounce writes to AsyncStorage to prevent disk thrashing on rapid taps.
-  useEffect(() => {
-    if (!isLoaded) return;
-    const timer = setTimeout(() => {
-      void saveCounterState(state);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [isLoaded, state]);
-
-  // Flush the latest state when the app leaves the foreground.
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState.match(/inactive|background/) && isLoaded) {
-        void saveCounterState(stateRef.current);
-      }
-    });
-    return () => subscription.remove();
-  }, [isLoaded]);
+  const retryStorage = useCallback(() => {
+    void counterPersistence.retry();
+    void themePersistence.retry();
+  }, []);
 
   const dhikr = getDhikr(state.dhikrId);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
@@ -154,7 +134,7 @@ function CounterScreen() {
   const canUndo = state.count > 0;
 
   const handleIncrement = () => {
-    const previousCount = stateRef.current.count;
+    const previousCount = counterPersistence.getSnapshot().value.count;
     const next = dispatchCounter({ type: 'increment' });
     if (next.count === previousCount) return;
     const { isMilestone, activeMilestone } = getMilestoneProgress(next.count, next.target);
@@ -500,11 +480,24 @@ function CounterScreen() {
         }}
         onConfirm={handleConfirmReset}
       />
-      {launchVisible && (
+      {launchVisible && !hasHydrationError && (
         <LaunchExperience
           ready={isLoaded && isThemeReady && isHomeLaidOut}
           onFinish={finishLaunch}
         />
+      )}
+      {hasHydrationError && (
+        <View
+          onLayout={() => setIsRecoveryLaidOut(true)}
+          style={[styles.storageRecovery, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 16 }]}
+        >
+          <StorageNotice initialization onRetry={retryStorage} />
+        </View>
+      )}
+      {!hasHydrationError && hasSaveError && (
+        <View style={[styles.storageWarning, { bottom: insets.bottom + 8 }]}>
+          <StorageNotice initialization={false} onRetry={retryStorage} />
+        </View>
       )}
     </LinearGradient>
   );
@@ -522,6 +515,18 @@ export default function App() {
 
 function createStyles(theme: ThemeTokens) {
   return StyleSheet.create({
+    storageRecovery: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: 'center',
+      paddingHorizontal: 20,
+      zIndex: 50,
+    },
+    storageWarning: {
+      position: 'absolute',
+      left: 12,
+      right: 12,
+      zIndex: 50,
+    },
     screen: {
       backgroundColor: theme.background,
       flex: 1,

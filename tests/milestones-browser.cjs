@@ -17,7 +17,24 @@ const mocks = {
   "haptics.ts": "export const NotificationFeedbackType = { Success:'success', Warning:'warning' };\nexport const ImpactFeedbackStyle = { Light:'tap' };\nexport const notificationAsync = async (value: string) => { ((window as any).qa.haptics ??= []).push(value); };\nexport const impactAsync = async (value: string) => { ((window as any).qa.haptics ??= []).push(value); };\n"
 };
 for (const [name, source] of Object.entries(mocks)) fs.writeFileSync(path.join(scratch, name), source);
-fs.writeFileSync(path.join(scratch, 'entry.tsx'), `import React from 'react'; import { createRoot } from 'react-dom/client'; import App from ${JSON.stringify(path.join(root, 'App.tsx'))}; window.mountApp = () => createRoot(document.getElementById('root')).render(<App/>);`);
+fs.writeFileSync(path.join(scratch, 'entry.tsx'), `import React from 'react'; import { createRoot } from 'react-dom/client';
+import App from ${JSON.stringify(path.join(root, 'App.tsx'))};
+import { CounterRing } from ${JSON.stringify(path.join(root, 'src/components/CounterRing.tsx'))};
+import { FreeTapMode } from ${JSON.stringify(path.join(root, 'src/components/FreeTapMode.tsx'))};
+import { ThemeContext, THEMES } from ${JSON.stringify(path.join(root, 'src/theme.ts'))};
+import { DHIKR_OPTIONS } from ${JSON.stringify(path.join(root, 'src/counter.ts'))};
+window.mountApp = () => createRoot(document.getElementById('root')).render(<App/>);
+// Separate component fixture: no persistence owner, storage reads or writes.
+let fixtureRoot;
+window.renderMilestoneFixture = (mode, count, target, size) => {
+  fixtureRoot ??= createRoot(document.getElementById('root'));
+  fixtureRoot.render(<ThemeContext.Provider value={{themeId:'midnightSapphire',theme:THEMES.midnightSapphire,
+    isReady:true,hydration:'ready',saveStatus:'saved',setThemeId:()=>{}}}>
+    {mode === 'main' ? <CounterRing size={size} count={count} target={target} title="اختبار" completion={null}
+      effectsEnabled={false} onPress={()=>{}}/> : <FreeTapMode count={count} target={target} dhikr={DHIKR_OPTIONS[0]}
+      completion={null} effectsEnabled={false} topInset={24} bottomInset={24} onTap={()=>{}} onExit={()=>{}}/>}
+  </ThemeContext.Provider>);
+};`);
 esbuild.buildSync({
   entryPoints: [path.join(scratch, 'entry.tsx')], bundle: true, outfile: path.join(scratch, 'bundle.js'), jsx: 'automatic',
   nodePaths: [qaModules, path.join(root, 'node_modules')],
@@ -45,21 +62,22 @@ fs.mkdirSync(output, { recursive: true });
     await page.waitForTimeout(100);
   }
   const counter = () => page.getByRole('button', { name: /^عدّاد / });
-  async function value(locator, count, target) {
+  async function value(locator, count, target, testPage = page) {
     const arabic = value => String(value).replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
-    const interval = count === 0 ? 0 : ((count - 1) % target) + 1;
-    const visible = `${arabic(interval)} من ${arabic(target)}`;
+    const milestone = Math.max(1, Math.ceil(count / target)) * target;
+    const visible = `${arabic(count)} من ${arabic(milestone)}`;
     const expected = `${arabic(count)} تسبيحة، ${visible} في الهدف الحالي`;
-    await page.waitForFunction(({label, expected}) => {
+    const hint = `تقدّم الحلقة في الفترة الحالية: ${arabic(count === 0 ? 0 : ((count - 1) % target) + 1)} من ${arabic(target)}`;
+    await testPage.waitForFunction(({label, expected, hint}) => {
       const element = Array.from(document.querySelectorAll(`[aria-label="${label}"]`)).at(-1);
       if (!element) return false;
       let fiber = element[Object.keys(element).find(key => key.startsWith('__reactFiber$'))];
       while (fiber && !fiber.memoizedProps?.accessibilityValue) fiber = fiber.return;
-      return fiber?.memoizedProps.accessibilityValue.text === expected ||
-        fiber?.alternate?.memoizedProps.accessibilityValue?.text === expected;
-    }, { label: await locator.getAttribute('aria-label'), expected });
-    await page.getByText(visible, {exact: true}).first().waitFor();
-    await page.getByText(arabic(count), {exact: true}).first().waitFor();
+      return [fiber?.memoizedProps, fiber?.alternate?.memoizedProps].some(props =>
+        props?.accessibilityValue?.text === expected && props.accessibilityHint?.endsWith(hint));
+    }, { label: await locator.getAttribute('aria-label'), expected, hint });
+    await testPage.getByText(visible, {exact: true}).first().waitFor();
+    await testPage.getByText(arabic(count), {exact: true}).first().waitFor();
   }
   async function burst(taps, component = 'CounterRing') {
     await page.evaluate(({taps, component}) => {
@@ -92,6 +110,11 @@ fs.mkdirSync(output, { recursive: true });
   assert.equal(ring.activeBeads, 11);
   assert.ok(Math.abs(ring.dash - 2 * Math.PI * 157 * 2 / 3) < 0.001);
   await page.screenshot({path: output + '/44-of-66-browser.png'});
+  await page.getByRole('button', {name: 'النقر الحر', exact: true}).click();
+  await value(page.getByRole('button', {name: 'النقر الحر', exact: true}).last(), 44, 33);
+  await page.screenshot({path: output + '/free-44-of-66-browser.png'});
+  await page.getByRole('button', {name: 'إنهاء وضع النقر الحر'}).click();
+  await value(counter(), 44, 33);
   await burst(22);
   await value(counter(), 66, 33);
   await page.waitForTimeout(1000);
@@ -102,7 +125,7 @@ fs.mkdirSync(output, { recursive: true });
   await value(counter(), 66, 33);
   assert.equal(await page.getByText('اكتمل الهدف ٦٦', {exact: true}).count(), 0);
   assert.deepEqual(await page.evaluate(() => window.qa.announcements), ['اكتمل الهدف ٣٣', 'اكتمل الهدف ٦٦']);
-  results.push('32 → 33 → 34 → 44 → 66 → 67 → undo 66: cumulative count with interval labels, temporary completion and tap-only announcements pass.');
+  results.push('32 → 33 → 34 → 44 → 66 → 67 → undo 66: cumulative milestone labels, unchanged interval ring, temporary completion and tap-only announcements pass.');
   await page.getByRole('radio', {name: 'الهدف ١٠٠', exact: true}).click();
   await value(counter(), 66, 100);
   await burst(35);
@@ -135,7 +158,8 @@ fs.mkdirSync(output, { recursive: true });
   // The gallery stays open while applying a theme; close its labelled dialog.
   await page.getByRole('button', {name: 'العودة إلى الإعدادات', exact: true}).first().click();
   const close = page.getByRole('button', {name: /إغلاق/});
-  while (await close.count()) { await close.last().click(); }
+  await close.last().click();
+  await close.waitFor({state: 'detached'});
   await value(counter(), 201, 100);
   await page.screenshot({path: output + '/theme-active-browser.png'});
   await page.waitForTimeout(450);
@@ -245,6 +269,61 @@ fs.mkdirSync(output, { recursive: true });
   assert.ok(badgeMetrics.pillTop >= badgeMetrics.touchTop, 'Pill top must be inside touch area');
   assert.ok(badgeMetrics.pillBottom <= badgeMetrics.touchTop + badgeMetrics.touchWidth * 0.28, 'Pill must stay above the central counter');
   results.push('Round badge regression: compact content-based width and horizontal centering within the inner circle pass in Soft Ivory.');
+  // Render actual components with controlled props to cover large values without
+  // generating artificial taps or writing derived values into application storage.
+  const fixture = await context.newPage();
+  fixture.on('pageerror', error => errors.push(error.message));
+  await fixture.route('http://qa.zekr.test/**', route => route.fulfill({contentType:'text/html',
+    body:'<html lang="ar" dir="rtl"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body,#root{height:100%;margin:0}#root{display:flex;justify-content:center;align-items:center}</style></head><body><div id="root"></div></body></html>'}));
+  await fixture.goto('http://qa.zekr.test');
+  await fixture.addScriptTag({content:bundle});
+  const matrix = [];
+  const approved = new Map([[0,'٠ من ٣٣'],[32,'٣٢ من ٣٣'],[33,'٣٣ من ٣٣'],[34,'٣٤ من ٦٦'],
+    [44,'٤٤ من ٦٦'],[66,'٦٦ من ٦٦'],[67,'٦٧ من ٩٩'],[99,'٩٩ من ٩٩'],[100,'١٠٠ من ١٣٢']]);
+  async function checkFixture(mode, count, target) {
+    await fixture.evaluate(({mode,count,target}) => window.renderMilestoneFixture(mode,count,target,Math.min(innerWidth - 28,350)), {mode,count,target});
+    const control = fixture.getByRole('button', {name:mode === 'main' ? 'عدّاد اختبار' : 'النقر الحر', exact:true});
+    await control.waitFor();
+    await value(control,count,target,fixture);
+    const ar = number => String(number).replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+    const milestone = Math.max(1,Math.ceil(count/target))*target;
+    const label = `${ar(count)} من ${ar(milestone)}`;
+    if (target === 33 && approved.has(count)) assert.equal(label,approved.get(count));
+    const geometry = await fixture.evaluate(mode => {
+      const arc = document.querySelector(mode === 'main' ? '[stroke="url(#progressStroke)"]' : '[stroke="url(#freeTapProgress)"]');
+      return {radius:Number(arc.getAttribute('r')),dash:Number(arc.getAttribute('stroke-dashoffset')),
+        beads:document.querySelectorAll('circle[r="7.2"]').length,
+        active:document.querySelectorAll('circle[r="7.2"][fill="url(#activeBeadSphere)"]').length};
+    },mode);
+    const interval = count === 0 ? 0 : ((count-1)%target)+1;
+    assert.ok(Math.abs(geometry.dash - 2*Math.PI*geometry.radius*(1-interval/target)) < 0.001,
+      `${mode} ${count}/${target}: ring must retain interval progress`);
+    if (mode === 'main') {
+      assert.equal(geometry.beads,33);
+      assert.equal(geometry.active,count === 0 ? 0 : ((count-1)%33)+1);
+    }
+    const visible = fixture.getByText(label,{exact:true});
+    const overflow = await visible.evaluate(element => element.scrollWidth > element.clientWidth + 1);
+    assert.equal(overflow,false,`${mode} ${label}: milestone label must fit`);
+    return {mode,count,target,label,interval,geometry};
+  }
+  for (const mode of ['main','free']) {
+    for (const target of [1,7,25,33,40,99,100,1000,9999]) {
+      for (const count of [0,1,6,7,25,32,33,34,44,65,66,67,98,99,100,132,999,1000,1001,9999,999999]) {
+        matrix.push(await checkFixture(mode,count,target));
+      }
+    }
+    for (const width of [320,390]) {
+      await fixture.setViewportSize({width,height:844});
+      for (const count of [44,999999]) {
+        await checkFixture(mode,count,33);
+        await fixture.screenshot({path:`${output}/${mode}-${count}-${width}.png`});
+      }
+    }
+  }
+  await fixture.close();
+  fs.writeFileSync(output+'/presentation-matrix.json',JSON.stringify(matrix,null,2));
+  results.push(`${matrix.length} rendered main/Free Tap contract cases: cumulative Arabic labels and accessibility values, interval ring offsets, 33-bead independence and large-count label fit pass.`);
   assert.deepEqual(errors, []);
   await browser.close();
   fs.writeFileSync(output + '/browser-qa-results.json', JSON.stringify({environment: 'Actual app rendered through React Native Web in Chromium, mocked native APIs. No physical device or native simulator testing.', results}, null, 2));

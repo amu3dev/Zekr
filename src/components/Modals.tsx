@@ -19,6 +19,7 @@ import { THEME_OPTIONS, useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
 import { BookIcon, CheckIcon, ChevronDownIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
 import { CurrentThemeCard, ThemeGallery } from './ThemeGallery';
+import { StorageSaveNotice } from './StorageNotice';
 
 type ShellProps = {
   visible: boolean;
@@ -80,6 +81,7 @@ function ModalShell({
               <CloseIcon size={18} color={styles.closeIcon.color} />
             </Pressable>
           </View>
+          {visible && <StorageSaveNotice />}
           {children}
         </View>
       </KeyboardAvoidingView>

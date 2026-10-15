@@ -28,7 +28,8 @@
     "lint": "expo lint",
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/*.test.mjs",
     "test:launch": "node tests/launch-browser.cjs",
-    "test:milestones": "node tests/milestones-browser.cjs"
+    "test:milestones": "node tests/milestones-browser.cjs",
+    "test:persistence": "node tests/persistence-browser.cjs"
   },
   "private": true
 }

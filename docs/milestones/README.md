@@ -1,5 +1,7 @@
 # Automatic milestone progression — implementation and validation
 
+Current presentation contract and verification: [15 October 2026 milestone presentation fix](PRESENTATION_CONTRACT_FIX.md). The dated review notes and committed captures below remain historical evidence.
+
 ## Previous contradiction
 
 Both counting modes treated `count >= target` as a lasting completion condition, clamped the ring at 100%, and offered a manual next-cycle action. The reducer allowed further taps without changing that completion condition. The separately stored `cycle` only advanced via the manual action, which reset the count.
@@ -10,7 +12,7 @@ Both counting modes treated `count >= target` as a lasting completion condition,
 - `activeMilestone = Math.max(1, Math.ceil(count / baseTarget)) * baseTarget`.
 - Interval progress is `(count - (activeMilestone - baseTarget)) / baseTarget`. Zero count is zero progress; an exact boundary is full progress.
 - The 33 beads use `count === 0 ? 0 : ((count - 1) % 33) + 1`; their cycle uses `Math.max(1, Math.ceil(count / 33))`.
-- The outer ring sits outside the beads. The large center value remains cumulative; the label shows interval count out of the selected base goal, matching the arc. Accessibility values include both the cumulative count and interval progress.
+- The outer ring sits outside the beads and shows progress within the current interval. The large center value remains cumulative; the milestone label shows cumulative count out of the active cumulative milestone (44 of 66 at base 33). Accessibility values use that cumulative milestone; hints explicitly identify the separate interval progress.
 - A milestone tap shows restrained text for 900 ms, announces the milestone, and uses the existing enabled haptic feedback. A base goal of 1 uses ordinary tap haptics without completion text or announcements in either mode. The next tap clears the text immediately. Counting is never delayed or reset by completion.
 - Feedback runs only from an increment event, never restoration or render effects. The persistent panel, manual transition action and indefinite completion pulse are removed.
 - No milestone or bead-cycle state is persisted. Old `cycle` metadata is ignored; existing count, target, aggregate count, dhikr and settings remain readable under the same storage key.
@@ -64,7 +66,7 @@ npm run test:milestones
 
 ## Visually inspected evidence
 
-The committed captures below are historical evidence from before the review fixes. Current labels show interval progress (for example, 11 of 33 below a cumulative count of 44). New browser runs write to unique temporary folders and print the artifact path; `ZEKR_QA_OUTPUT` explicitly selects another destination.
+The committed captures below are historical evidence from before the review fixes. Current milestone labels show cumulative progress (for example, 44 of 66 at base 33); the ring still shows 11/33 interval progress. New browser runs write to unique temporary folders and print the artifact path; `ZEKR_QA_OUTPUT` explicitly selects another destination.
 
 - [Milestone 33 acknowledgment](33-complete-browser.png)
 - [44 of 66: eleven beads and one-third interval progress](44-of-66-browser.png)
