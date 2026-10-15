@@ -7,8 +7,12 @@ test('Arabic and Persian keyboard digits round trip without altering other text'
   assert.equal(normalizeDigits('١٢٣ ۴۵۶ 789، هدف'), '123 456 789، هدف');
   assert.equal(toArabicDigits('goal 123/9999'), 'goal ١٢٣/٩٩٩٩');
   assert.equal(normalizeDigits(toArabicDigits(9999)), '9999');
+  assert.equal(getCycleText(1), 'الدورة الأولى');
   assert.equal(getCycleText(2), 'الدورة الثانية');
+  assert.equal(getCycleText(7), 'الدورة السابعة');
+  assert.equal(getCycleText(10), 'الدورة العاشرة');
   assert.equal(getCycleText(11), 'الدورة ١١');
+  assert.equal(getCycleText(100), 'الدورة المائة');
 });
 
 test('targets accept only bounded integers', () => {

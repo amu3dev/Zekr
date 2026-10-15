@@ -38,5 +38,8 @@ export function getCycleText(cycleNumber: number): string {
   if (cycleNumber >= 1 && cycleNumber <= CYCLE_ORDINALS.length) {
     return `الدورة ${CYCLE_ORDINALS[cycleNumber - 1]}`;
   }
+  if (cycleNumber === 100) {
+    return 'الدورة المائة';
+  }
   return `الدورة ${toArabicDigits(cycleNumber)}`;
 }

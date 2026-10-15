@@ -211,6 +211,40 @@ fs.mkdirSync(output, { recursive: true });
     previousCount = count;
   }
   results.push('Reported Android counts: exact cumulative Arabic-Indic text at 33, 66, 67, 99, 100, 103, 132, 133, 137, 999 and 1000. Native font fitting is tested separately on Android.');
+
+  // Round badge regression: verify cycle pill is compact and centered within the inner circle in Soft Ivory
+  await page.evaluate(() => {
+    localStorage.clear();
+    localStorage.setItem('@dhikr/counter-state/v1', JSON.stringify({ count: 201, target: 33, visualEffectsEnabled: true }));
+    localStorage.setItem('@dhikr/theme/v1', 'softIvory');
+  });
+  await page.reload();
+  await mount();
+  const cycleText = page.getByText('الدورة السابعة', { exact: true });
+  await cycleText.waitFor();
+  const badgeMetrics = await page.evaluate(() => {
+    const textNode = Array.from(document.querySelectorAll('*')).find(n => n.textContent === 'الدورة السابعة' && n.children.length === 0);
+    const pill = textNode ? textNode.parentElement : null;
+    const touchArea = pill ? pill.closest('[aria-label^="عدّاد "]') : null;
+    if (!pill || !touchArea) return null;
+    const pillRect = pill.getBoundingClientRect();
+    const touchRect = touchArea.getBoundingClientRect();
+    return {
+      pillWidth: pillRect.width,
+      pillCenterX: pillRect.left + pillRect.width / 2,
+      touchWidth: touchRect.width,
+      touchCenterX: touchRect.left + touchRect.width / 2,
+      touchTop: touchRect.top,
+      pillTop: pillRect.top,
+      pillBottom: pillRect.bottom,
+    };
+  });
+  assert.ok(badgeMetrics, 'Round badge and touch area must exist');
+  assert.ok(badgeMetrics.pillWidth < badgeMetrics.touchWidth * 0.70, `Pill width ${badgeMetrics.pillWidth} must be < 70% of inner circle ${badgeMetrics.touchWidth}`);
+  assert.ok(Math.abs(badgeMetrics.pillCenterX - badgeMetrics.touchCenterX) <= 2, `Pill center ${badgeMetrics.pillCenterX} must match touch center ${badgeMetrics.touchCenterX}`);
+  assert.ok(badgeMetrics.pillTop >= badgeMetrics.touchTop, 'Pill top must be inside touch area');
+  assert.ok(badgeMetrics.pillBottom <= badgeMetrics.touchTop + badgeMetrics.touchWidth * 0.28, 'Pill must stay above the central counter');
+  results.push('Round badge regression: compact content-based width and horizontal centering within the inner circle pass in Soft Ivory.');
   assert.deepEqual(errors, []);
   await browser.close();
   fs.writeFileSync(output + '/browser-qa-results.json', JSON.stringify({environment: 'Actual app rendered through React Native Web in Chromium, mocked native APIs. No physical device or native simulator testing.', results}, null, 2));

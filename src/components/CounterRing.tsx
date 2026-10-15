@@ -302,9 +302,11 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
             pressed && styles.pressed,
           ]}
         >
-          <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.cyclePill}>
-            <View style={styles.cycleDot} />
-            <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.3} style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
+          <View pointerEvents="none" style={styles.cycleBadgeSlot}>
+            <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={styles.cyclePill}>
+              <View style={styles.cycleDot} />
+              <Text numberOfLines={1} adjustsFontSizeToFit maxFontSizeMultiplier={1.25} style={styles.cyclePillText}>{getCycleText(cycle)}</Text>
+            </View>
           </View>
 
           {/* A bounded slot lets native auto-fit use both width and height. The
@@ -363,34 +365,44 @@ function createStyles(theme: ThemeTokens) {
       borderWidth: 1.6,
       position: 'absolute',
     },
+    cycleBadgeSlot: {
+      position: 'absolute',
+      top: '8.5%',
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     cyclePill: {
       alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
       backgroundColor: theme.warmSurface,
       borderColor: theme.warmBorder,
-      borderRadius: 14,
+      borderWidth: 1,
+      borderRadius: 999,
       flexDirection: 'row',
       gap: 5,
-      position: 'absolute',
-      top: '6%',
-      height: '17%',
-      width: '90%',
-      paddingHorizontal: 11,
-      paddingVertical: 2,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      maxWidth: '68%',
     },
     cycleDot: {
       backgroundColor: theme.warm,
-      borderRadius: 4,
+      borderRadius: 3,
       height: 5,
       width: 5,
+      flexShrink: 0,
     },
     cyclePillText: {
-      flex: 1,
+      flexShrink: 1,
       minWidth: 0,
-      height: '100%',
+      textAlign: 'center',
       textAlignVertical: 'center',
       color: theme.warm,
       fontSize: 11,
-      fontWeight: '800',
+      fontWeight: '700',
+      includeFontPadding: false,
     },
     countText: {
       color: theme.warmBright,
