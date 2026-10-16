@@ -72,7 +72,7 @@
 
 **Zekr (ذِكر)** is an open-source, mobile application crafted with love to provide a peaceful and focused remembrance (*Dhikr*) and tasbeeh experience. 
 
-Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, Zekr blends **timeless Islamic sacred geometry** with modern, tactile mobile physics. It offers a distraction-free spiritual companion that is completely offline, privacy-first, and free of commercial ads forever.
+Zekr is an Arabic-first remembrance app that blends **timeless Islamic sacred geometry** with a calm, tactile mobile experience. The in-app dhikr library presents Arabic text; this README provides English transliterations and meanings for non-native Arabic readers. It is designed to work offline and without ads or analytics.
 
 > *"Verily, in the remembrance of Allah do hearts find rest."* — Surah Ar-Ra'd (13:28)
 
@@ -89,9 +89,9 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 - An SVG vector background featuring the **8-Pointed Islamic Star** (*Khatam Suleiman*) and arabesque framing with a gentle theme-aware ambient glow.
 
 ### 📚 3. Authentic Dhikr Library with Full Vowel Marks (Tashkeel)
-- Fully diacritized Arabic phrases accompanied by their authentic Hadith references (*Sahih al-Bukhari*, *Sahih Muslim*, *Muttafaqun 'Alayh*).
-- Clear English transliterations and translations to empower non-native Arabic speakers.
-- Grouped into meaningful categories (*Taspbih*, *Comprehensive Remembrance*, *Istighfar*, *Salawat*).
+- The in-app library contains fully diacritized Arabic phrases, Arabic virtue summaries, and Hadith source references.
+- The in-app library is Arabic-only; English transliterations and meanings are provided in the reference table below.
+- Grouped into meaningful categories (*Tasbih*, *Comprehensive Remembrance*, *Istighfar*, *Salawat*).
 
 ### 🔁 4. Automatic Milestones & Lifetime Session Stats
 - Displays the current 33-bead round (*Round 1, Round 2, Round 3...*), independently of the selected goal.
@@ -104,8 +104,8 @@ Designed for both Arabic speakers and **non-native Arabic speakers worldwide**, 
 ### 📳 6. Customizable Haptic Touch Feedback
 - Fine-tuned vibrational pulses powered by `expo-haptics` that differentiate between individual bead counts and goal completion.
 
-### 🎨 7. Three Complete Visual Identities
-- Switch instantly between Midnight Sapphire, Royal Amethyst, and Soft Ivory from Settings. Each theme coordinates the background, surfaces, ring, beads, controls, typography, borders, and completion feedback, and the selected theme is saved locally.
+### 🎨 7. Six Complete Visual Identities
+- Switch instantly between Midnight Sapphire, Royal Amethyst, Soft Ivory, Obsidian Ember, Glacier Prism, and Solar Pulse from Settings. Each theme coordinates the background, surfaces, ring, beads, controls, typography, borders, and completion feedback, and the selected theme is saved locally.
 
 ### 🌌 8. Intentional Native Launch Experience
 - Both native platforms use a stable Midnight Sapphire background and the same transparent Tasbeeh emblem. The JavaScript launch layer reveals the beads, glow, and `ذِكْر` branding after home is prepared.
@@ -214,7 +214,7 @@ Zekr/
 │   ├── arabic.ts                 # Arabic number formatting, ordinals, and normalization
 │   ├── counter.ts                # Dhikr database, hadith virtues, reducer & persistence sanitize
 │   ├── storage.ts                # Local storage interface via AsyncStorage
-│   ├── theme.ts                  # Semantic tokens for all three visual identities
+│   ├── theme.ts                  # Semantic tokens for all six visual identities
 │   └── ThemeProvider.tsx         # Runtime theme selection and local preference restore
 ├── App.tsx                       # Main application screen and dock orchestration
 ├── app.json                      # Expo application manifest & permission lockdown
