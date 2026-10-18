@@ -1,0 +1,102 @@
+{
+  "environment": "Actual React Native Web app, mocked native APIs, isolated browser contexts",
+  "results": [
+    {
+      "scenario": "1 failed reads, retry, background and restart",
+      "before": {
+        "count": 202,
+        "target": 33,
+        "totalSessionCount": 500,
+        "dhikrId": "tasbih_tahmid",
+        "hapticsEnabled": false,
+        "visualEffectsEnabled": false,
+        "fullScreenTap": false
+      },
+      "after": {
+        "count": 202,
+        "target": 33,
+        "totalSessionCount": 500,
+        "dhikrId": "tasbih_tahmid",
+        "hapticsEnabled": false,
+        "visualEffectsEnabled": false,
+        "fullScreenTap": false
+      },
+      "writes": 0
+    },
+    {
+      "scenario": "4 failed reads, retry, background and restart",
+      "before": {
+        "count": 202,
+        "target": 33,
+        "totalSessionCount": 500,
+        "dhikrId": "tasbih_tahmid",
+        "hapticsEnabled": false,
+        "visualEffectsEnabled": false,
+        "fullScreenTap": false
+      },
+      "after": {
+        "count": 202,
+        "target": 33,
+        "totalSessionCount": 500,
+        "dhikrId": "tasbih_tahmid",
+        "hapticsEnabled": false,
+        "visualEffectsEnabled": false,
+        "fullScreenTap": false
+      },
+      "writes": 0
+    },
+    {
+      "scenario": "Empty storage and first count",
+      "passed": true
+    },
+    {
+      "scenario": "Write failure, continued rapid counting, retry and restart",
+      "after": {
+        "count": 253,
+        "target": 33,
+        "dhikrId": "tasbih_tahmid",
+        "hapticsEnabled": false,
+        "visualEffectsEnabled": false,
+        "totalSessionCount": 551,
+        "fullScreenTap": false
+      }
+    },
+    {
+      "scenario": "Automatic write retry saves all 1000 rapid taps",
+      "passed": true
+    },
+    {
+      "scenario": "Background flush and component unmount/remount retain latest actions",
+      "passed": true
+    },
+    {
+      "scenario": "Theme read failure, write failure, foreground recovery and restart",
+      "passed": true
+    },
+    {
+      "scenario": "Theme gallery displays save failure and retry inside the open modal",
+      "passed": true
+    },
+    {
+      "scenario": "Settings, Free Tap, target and progress restore on restart",
+      "passed": true
+    },
+    {
+      "scenario": "Empty/malformed/invalid progress is preserved; empty payload recovers through retry",
+      "cases": 6
+    },
+    {
+      "scenario": "Null read plus failed web enumeration blocks defaults until verified absence",
+      "passed": true
+    },
+    {
+      "scenario": "Existing empty web theme blocks startup and restores valid theme after recovery",
+      "passed": true
+    },
+    {
+      "scenario": "Existing legacy migration preserves saved data until an actual update",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -1,3 +1,5 @@
+> **Historical snapshot.** This dated report and its original evidence are preserved. For current behavior, test results and release status see the [project baseline](../PROJECT_BASELINE.md). Older test totals and machine-local evidence links below are not current portable proof.
+
 # Milestone presentation contract fix — 15 October 2026
 
 **Result:** Main Tasbeeh and Free Tap milestone labels now show cumulative count relative to the active cumulative milestone. At count 44 with base target 33, both display **٤٤ من ٦٦**. The outer ring remains at 11/33 interval progress, the main counter has 11 active beads out of its fixed 33-bead cycle, and the selected base target remains 33.

@@ -1,0 +1,47 @@
+{
+  "scope": "Selected opaque semantic token pairs only; does not prove complete composited UI or native accessibility compliance.",
+  "results": [
+    {
+      "id": "midnightSapphire",
+      "textOnBackground": 16.591382730001264,
+      "mutedOnBackground": 11.398340265379154,
+      "faintOnBackground": 3.9312881215090973,
+      "counterOnRing": 13.568536493949438
+    },
+    {
+      "id": "royalAmethyst",
+      "textOnBackground": 15.870911623266878,
+      "mutedOnBackground": 10.868572668819805,
+      "faintOnBackground": 3.500508319884599,
+      "counterOnRing": 11.922585901124638
+    },
+    {
+      "id": "softIvory",
+      "textOnBackground": 10.571211168586391,
+      "mutedOnBackground": 5.339637182010702,
+      "faintOnBackground": 4.970977085631354,
+      "counterOnRing": 4.620861463414728
+    },
+    {
+      "id": "obsidianEmber",
+      "textOnBackground": 16.29102400595627,
+      "mutedOnBackground": 10.118026546481378,
+      "faintOnBackground": 4.027449340218971,
+      "counterOnRing": 9.45194467025162
+    },
+    {
+      "id": "glacierPrism",
+      "textOnBackground": 11.50651188294123,
+      "mutedOnBackground": 6.818626371376937,
+      "faintOnBackground": 4.821409439113821,
+      "counterOnRing": 6.499956114843468
+    },
+    {
+      "id": "solarPulse",
+      "textOnBackground": 14.574851715278784,
+      "mutedOnBackground": 9.218919334797839,
+      "faintOnBackground": 3.72435822843316,
+      "counterOnRing": 8.484209669167546
+    }
+  ]
+}

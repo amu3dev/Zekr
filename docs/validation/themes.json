@@ -1,0 +1,314 @@
+[
+  {
+    "theme": "softIvory",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#FFF9F0",
+      "track": {
+        "false": "#E2D4C6",
+        "true": "#A65E51"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  },
+  {
+    "theme": "midnightSapphire",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#F0CF91",
+      "track": {
+        "false": "#2A3B70",
+        "true": "#5369AD"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  },
+  {
+    "theme": "royalAmethyst",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#F4B7A7",
+      "track": {
+        "false": "#573666",
+        "true": "#986FAD"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  },
+  {
+    "theme": "obsidianEmber",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#FFD2C2",
+      "track": {
+        "false": "#36313B",
+        "true": "#A84B29"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  },
+  {
+    "theme": "glacierPrism",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#FFFFFF",
+      "track": {
+        "false": "#CCE3E7",
+        "true": "#087F99"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  },
+  {
+    "theme": "solarPulse",
+    "fontScale": 1,
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "switchProps": {
+      "thumb": "#FFF0DC",
+      "track": {
+        "false": "#543A50",
+        "true": "#BF513B"
+      }
+    },
+    "nativeSelectedState": {
+      "checked": true,
+      "selected": true
+    },
+    "errors": [],
+    "radios": [
+      {
+        "label": "مظهر ياقوت الليل، سكينة ليلية بلون الياقوت",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر الجمشت الملكي، هوية بنفسجية رقيقة ومهيبة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر العاجي الهادئ، دفء هادئ وبساطة مضيئة",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر جمر الليل، حجر بركاني داكن ووهج نحاسي دافئ",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر طيف الجليد، صفاء بلوري وانتعاش جليدي شفاف",
+        "checked": null,
+        "selected": null
+      },
+      {
+        "label": "مظهر نبض الشمس، إشراق الغروب الدافئ بعمق بنفسجي",
+        "checked": null,
+        "selected": null
+      }
+    ]
+  }
+]

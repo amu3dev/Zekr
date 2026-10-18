@@ -1,3 +1,5 @@
+> **Historical snapshot.** This dated report and its original evidence are preserved. For current behavior, test results and release status see the [project baseline](../PROJECT_BASELINE.md). Older test totals and machine-local evidence links below are not current portable proof.
+
 # Zekr launch implementation and validation — 13 October 2026
 
 The native system splash and the JavaScript launch experience are separate stages.

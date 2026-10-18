@@ -1,0 +1,129 @@
+{
+  "recordedAt": "2026-10-18T07:55:56.683789+00:00",
+  "platform": "Native Android 14/API 34 emulator, Pixel 3a arm64. EAS preview release APK; no Metro/Expo Go.",
+  "buildId": "23373925-2ac0-4add-b7ae-bacd7d5ce98a",
+  "sourceCommit": "51c8121078f1070f32ed6cc014c8f58b31a19fd5",
+  "sourceState": "Parent application source unchanged; uncommitted EAS linkage/local-version config included in build.",
+  "apkSha256": "47cbc16b5e02746ea60e49791aededf87743d7585c6af822a60fa89ce1b93895",
+  "display": {
+    "rawWidth": 1080,
+    "rawHeight": 2220,
+    "density": 440,
+    "fontScale": 1.0,
+    "documentationWidth": 540,
+    "documentationHeight": 1110
+  },
+  "captureMethod": "ADB screencap; uniform 50% sips resize only. Read-only/no-snapshot emulator and isolated test data.",
+  "state": {
+    "dhikrId": "tasbih_tahmid",
+    "count": 44,
+    "baseTarget": 33,
+    "activeMilestone": 66,
+    "activeBeads": 11,
+    "hapticsEnabled": false,
+    "visualEffectsEnabled": false
+  },
+  "exceptions": {
+    "milestone-33-completion.png": "Real native tap reached 33/33 before continuing to 44.",
+    "custom-target.png": "Unchanged initial goal 33; numeric keyboard not shown (Android input-method state mInputShown=false).",
+    "galleryAndSettingsPreviews": "Static 12/33 app preview, independent of session count."
+  },
+  "results": [
+    {
+      "themeId": "midnightSapphire",
+      "arabicLabel": "ياقوت الليل",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    },
+    {
+      "themeId": "royalAmethyst",
+      "arabicLabel": "الجمشت الملكي",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    },
+    {
+      "themeId": "softIvory",
+      "arabicLabel": "العاجي الهادئ",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    },
+    {
+      "themeId": "obsidianEmber",
+      "arabicLabel": "جمر الليل",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    },
+    {
+      "themeId": "glacierPrism",
+      "arabicLabel": "طيف الجليد",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    },
+    {
+      "themeId": "solarPulse",
+      "arabicLabel": "نبض الشمس",
+      "gallerySelectionChecked": true,
+      "themeRestoredAfterForceStop": true,
+      "countAndTargetPreserved": true,
+      "mainAndFreeTapParity": true,
+      "nativeValueChecks": {
+        "count": "٤٤ تسبيحة",
+        "cumulativeMilestone": "٤٤ من ٦٦"
+      }
+    }
+  ],
+  "automationScope": "All six native theme journeys passed. Supplementary custom-dialog capture completed separately with keyboard hidden. Physical screen reader/haptics, other OS versions and unacknowledged-write durability were not tested.",
+  "knownNativeIssue": "Numeric keyboard can cover custom-target Save/Cancel actions until dismissed.",
+  "screenshotSha256": {
+    "custom-target.png": "cc952f941a8f3dbee569cbb0f031de127254aad9abef1e21035382a298b016b9",
+    "dhikr-selection.png": "ee5ccb2e661f6bd0527e576941a0af49de1b875f2e038e060223256e309df486",
+    "free-tap-glacier-prism.png": "d7f8aa1aec766b078f8cd0a929268d27f524038d4d4cea7ff6c0475880555c17",
+    "free-tap-midnight-sapphire.png": "2413a860286686eaaaaf5964af56a40b943eb0e41ada72f8f6c1640dc9667ce7",
+    "free-tap-obsidian-ember.png": "0a41cb8afa979a3493042c4c76fb8a4e7473384ca7722e15cfe7b75f87f88ee9",
+    "free-tap-royal-amethyst.png": "5951165e3662289997d8046ffc88ad97ce1d2cde2205bf76feddf7fa4241208c",
+    "free-tap-soft-ivory.png": "0c68589cdda54805e1da84a2e64d3e53d131107443e52e30afa9dc996d405230",
+    "free-tap-solar-pulse.png": "e5ea1a352110592cbe751980bb0298cd5af1e05e1051883717c21549e8e0cbcc",
+    "milestone-33-completion.png": "cd67fc8c792ab154fa9dd418aafa45f7b1ca023ab3ba18789b66068f35d0a08f",
+    "settings-solar-pulse.png": "2db31f8030bb766bdeb871aec0a11dc6e994f294d0e2f964c709c50525933f30",
+    "tasbeeh-glacier-prism.png": "75445f408c027e2ea40ac45397166d3e6fcaa1d4158a496b4689e3b7178677bc",
+    "tasbeeh-midnight-sapphire.png": "06104282d356fe74fef11b463a75909e713e04e610ac490420174c9e7b205eac",
+    "tasbeeh-obsidian-ember.png": "db15c90efc48746ec488107dc6d30947897900254eb71f2b276ba0d6ffaeee04",
+    "tasbeeh-royal-amethyst.png": "fb1144c3b5fad2a49d221ef24a254fe1b87dd58801d1a263530b8f972544b67c",
+    "tasbeeh-soft-ivory.png": "0814d7c36ffdbeaf684ba903805fdc4ac3929eecb5eab0dee3a1776ebba38b62",
+    "tasbeeh-solar-pulse.png": "b5f14649d59d6b3ca23e8088a18d4699efca7c290e881d80732f89e6196bb5a1",
+    "theme-gallery-initial.png": "3de0c0268d2265579faeeaba1f6e138b97a2ffb58a19901fc3eb2095fc186877",
+    "theme-gallery-scrolled.png": "f3ff2988213bf62fda984ebaf84d626b7bafa6a1f41d9c3e717e8450776a7fe7"
+  },
+  "visualReview": "All 18 retained images inspected: six main, six Free Tap, initial gallery, scrolled/selected gallery, Settings, library, custom target and completion.",
+  "curation": "Retained 18 captures. Removed a byte-identical separate gallery-selected copy; gallery-scrolled already shows Solar Pulse selected."
+}

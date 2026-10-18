@@ -1,0 +1,18 @@
+{
+  "environment": "Actual App + LaunchExperience via React Native Web; mocked native splash, safe area and OS events. Not Android validation.",
+  "results": [
+    "Normal launch exits; background/foreground does not replay; native hide called once.",
+    "StrictMode effect replay still completes launch, starts the reveal once and hides native splash once without counting.",
+    "Skip dismisses the launch.",
+    "Reduced motion dismisses immediately and preserves stored theme.",
+    "Background during launch cancels and does not replay.",
+    "Emblem tap dismisses without changing count; Amethyst theme remains stored.",
+    "Enabling reduced motion during launch immediately cancels it.",
+    "failAnimation: native handoff is independent of the bounded fallback.",
+    "unknownMotion: native handoff is independent of the bounded fallback.",
+    "Three batched taps from 98 to 101 trigger exactly one success at 100 and preserve count.",
+    "Gallery exposes a labelled radio group with six selectable themes.",
+    "A delayed motion preference starts the intro without delaying native hide or extending the deadline.",
+    "Holding a launch tap beyond the animation deadline keeps the responder and does not increment home."
+  ]
+}

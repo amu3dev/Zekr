@@ -65,6 +65,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "840613e4-8465-43e5-babf-69a3cb61a45c"
+      }
+    },
+    "owner": "ayosry"
   }
 }

@@ -1,0 +1,36 @@
+{
+  "id": "23373925-2ac0-4add-b7ae-bacd7d5ce98a",
+  "status": "FINISHED",
+  "platform": "ANDROID",
+  "distribution": "INTERNAL",
+  "buildProfile": "preview",
+  "appIdentifier": "app.dhikr.counter",
+  "sdkVersion": "57.0.0",
+  "appVersion": "0.1.0",
+  "appBuildVersion": "1",
+  "gitCommitHash": "51c8121078f1070f32ed6cc014c8f58b31a19fd5",
+  "createdAt": "2026-10-18T07:34:09.687Z",
+  "completedAt": "2026-10-18T07:42:45.480Z",
+  "expirationDate": "2026-11-01T07:34:09.726Z",
+  "fingerprint": {
+    "id": "01a14dee-ac46-77df-9b5c-1808c5f5e8e9",
+    "hash": "68dac54d4c22aca268c91e35d99cfb901ee2f966"
+  },
+  "artifactUrl": "https://expo.dev/artifacts/eas/Idh9kUOUATWWdxoKojQctJiiutM3XzIYnjVL_AoqSPE.apk",
+  "artifactPath": "artifacts/android/zekr-0.1.0-1-preview-23373925.apk",
+  "artifactBytes": 76383218,
+  "sha256": "47cbc16b5e02746ea60e49791aededf87743d7585c6af822a60fa89ce1b93895",
+  "signingMethod": "EAS-managed Android keystore",
+  "signingCertificateSha256": "7450ea8b6e0a58d4d855f74a0c3984591cb30a5debbb5fedca608909417252c7",
+  "sourceState": "Existing master HEAD plus uncommitted EAS linkage and local-version configuration; application source unchanged. Not a clean synchronized consolidation commit.",
+  "permissions": [
+    "android.permission.VIBRATE",
+    "app.dhikr.counter.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "internetPermission": false,
+  "debuggable": false,
+  "allowBackup": false,
+  "minSdk": 24,
+  "targetSdk": 36,
+  "compileSdk": 36
+}

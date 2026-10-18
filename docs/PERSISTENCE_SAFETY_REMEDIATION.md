@@ -1,3 +1,5 @@
+> **Historical snapshot.** This dated report and its original evidence are preserved. For current behavior, test results and release status see the [project baseline](PROJECT_BASELINE.md). Older test totals and machine-local evidence links below are not current portable proof.
+
 # Zekr persistence safety remediation
 
 Date: 15 October 2026 (Africa/Cairo). Baseline commit: `626c38824be570c34bce4cb365f9bc28d358bb68`.

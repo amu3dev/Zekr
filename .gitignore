@@ -42,3 +42,6 @@ yarn-error.*
 
 docs/*-evidence/
 
+# Local distributable binaries; traceable build records live in docs.
+/artifacts/
+

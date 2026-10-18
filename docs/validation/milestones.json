@@ -1,0 +1,15 @@
+{
+  "environment": "Actual app rendered through React Native Web in Chromium, mocked native APIs. No physical device or native simulator testing.",
+  "results": [
+    "32 → 33 → 34 → 44 → 66 → 67 → undo 66: cumulative milestone labels, unchanged interval ring, temporary completion and tap-only announcements pass.",
+    "Goal change preserves count; 35 batched taps cross 100 with exactly one completion.",
+    "Free Tap crosses 200; reload restores count, base target and mode without completion replay.",
+    "Custom Arabic input goals 7 and 40 preserve count, cross boundaries, and restore at an exact milestone without replay.",
+    "Theme switching and theme restoration preserve progression; reset returns to 0 and first milestone.",
+    "Motion enabled: restoration does not start completion feedback; next interval continues immediately.",
+    "Goal 1 in both modes: count increments with ordinary tap haptics and no repeated completion text or announcements.",
+    "Reported Android counts: exact cumulative Arabic-Indic text at 33, 66, 67, 99, 100, 103, 132, 133, 137, 999 and 1000. Native font fitting is tested separately on Android.",
+    "Round badge regression: compact content-based width and horizontal centering within the inner circle pass in Soft Ivory.",
+    "378 rendered main/Free Tap contract cases: cumulative Arabic labels and accessibility values, interval ring offsets, 33-bead independence and large-count label fit pass."
+  ]
+}
