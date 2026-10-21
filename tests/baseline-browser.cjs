@@ -1,5 +1,5 @@
 // Actual App rendered through React Native Web. Native APIs are mocked.
-// QA dependencies and default artifacts stay outside the application tree.
+// QA dependencies stay external; captures default to ignored .qa-artifacts/.
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
@@ -10,7 +10,7 @@ const root = path.resolve(__dirname, '..');
 const qaModules = process.env.ZEKR_QA_MODULES || path.join(root, 'node_modules');
 const resolveQA = name => require.resolve(name, { paths: [qaModules] });
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'zekr-baseline-'));
-const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
+const output = require('./support/qa-output.cjs')('baseline-browser');
 fs.mkdirSync(output, { recursive: true });
 const mocks = {
   'rn.ts': `export * from 'react-native-web';

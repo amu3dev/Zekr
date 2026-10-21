@@ -38,7 +38,7 @@ npm run test:themes
 npm run test:baseline
 ```
 
-Set `ZEKR_QA_CHROME` to an existing Chrome executable if desired. `ZEKR_QA_PLAYWRIGHT` can select another Playwright installation. Default outputs are unique temporary folders; they do not overwrite committed evidence.
+Set `ZEKR_QA_CHROME` to an existing Chrome executable if desired. `ZEKR_QA_PLAYWRIGHT` can select another Playwright installation. Default outputs are unique ignored `.qa-artifacts/` run folders; they do not overwrite committed evidence.
 
 To intentionally refresh this final collection after review:
 

@@ -42,7 +42,7 @@ esbuild.buildSync({ entryPoints: [path.join(scratch, 'entry.tsx')], bundle: true
   define: { global: 'globalThis', __DEV__: 'true', 'process.env.NODE_ENV': '"development"', 'process.env.EXPO_OS': '"web"' },
 });
 const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
-const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
+const output = require('./support/qa-output.cjs')('persistence-browser');
 fs.mkdirSync(output, { recursive: true });
 const counterKey = '@dhikr/counter-state/v1';
 const themeKey = '@dhikr/theme/v1';

@@ -1,5 +1,7 @@
 # Guided routines: actual-app browser evidence
 
+> **Local-only evidence:** Linked captures, manifests and validation outputs in this folder are preserved on the original checkout and ignored by Git. They will be unavailable in a fresh clone or worktree. The Markdown report remains portable; see the [QA artifact policy](../QA_ARTIFACT_POLICY.md).
+
 **Historical initial integration.** These captures and results predate the focused UI recovery. See the [current compact layout, before/after comparisons and current validation status](../routines-ui/README.md). The original evidence is retained without being relabeled as evidence for the revised UI.
 
 Captured 18 October 2026 from the working-tree `App.tsx` through React Native Web in isolated headless Chrome. **These are browser screenshots, not native Android/iOS captures.** No mockup artwork replaces the application UI. Earlier APK/native images elsewhere in the repository predate this feature.

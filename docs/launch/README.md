@@ -77,7 +77,7 @@ The browser harness is checked in at `tests/launch-browser.cjs`. Install QA-only
 npm install --prefix /private/tmp/zekr-launch-qa react@19.2.3 react-dom@19.2.3 react-native-web@0.21.0 esbuild playwright
 ```
 
-Install Playwright Chromium/ffmpeg for that temporary runtime, or set `ZEKR_QA_CHROME` to an existing Chrome executable. Set `ZEKR_QA_MODULES=/private/tmp/zekr-launch-qa/node_modules` and run `npm run test:launch`. `ZEKR_QA_PLAYWRIGHT` can point to a separately provided Playwright module. Captures and scenario results default to a unique temporary folder printed at completion. Set `ZEKR_QA_OUTPUT` to explicitly choose a destination; committed evidence is never overwritten by default.
+Install Playwright Chromium/ffmpeg for that temporary runtime, or set `ZEKR_QA_CHROME` to an existing Chrome executable. Set `ZEKR_QA_MODULES=/private/tmp/zekr-launch-qa/node_modules` and run `npm run test:launch`. `ZEKR_QA_PLAYWRIGHT` can point to a separately provided Playwright module. Captures and scenario results default to a unique ignored `.qa-artifacts/` run folder printed at completion. Set `ZEKR_QA_OUTPUT` to explicitly choose a destination; committed evidence is never overwritten by default.
 
 Review fixes on 2026-10-13 made launch cleanup safe under StrictMode, kept the emblem at full opacity until the overlay dissolves, and removed its unused style. The browser suite passed all existing scenarios plus a StrictMode launch regression. The committed captures remain historical evidence; the new run was saved to temporary storage. Native launch validation remains outstanding.
 

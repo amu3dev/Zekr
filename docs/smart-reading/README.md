@@ -1,5 +1,7 @@
 # نظام القراءة الذكية للأذكار
 
+> **Local-only evidence:** Linked captures, manifests and validation outputs in this folder are preserved on the original checkout and ignored by Git. They will be unavailable in a fresh clone or worktree. The Markdown report remains portable; see the [QA artifact policy](../QA_ARTIFACT_POLICY.md).
+
 Local implementation and review evidence, 19 October 2026. This extends the existing uncommitted tree; no commit, push, publication, release build, native project generation or dependency change was performed.
 
 ## Architecture and behavior

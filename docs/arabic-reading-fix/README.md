@@ -1,5 +1,7 @@
 # Arabic reading correction — 19 October 2026
 
+> **Local-only evidence:** Linked captures, manifests and validation outputs in this folder are preserved on the original checkout and ignored by Git. They will be unavailable in a fresh clone or worktree. The Markdown report remains portable; see the [QA artifact policy](../QA_ARTIFACT_POLICY.md).
+
 Focused changes on the existing uncommitted `master` tree. No commit, push, release, APK generation, dependency or native configuration change.
 
 ## Correction and files

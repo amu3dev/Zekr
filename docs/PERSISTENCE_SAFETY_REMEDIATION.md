@@ -1,3 +1,5 @@
+> **Local-only evidence:** Absolute `/Users/...` links in this historical report refer to the original machine, are not included in Git, and are unavailable in a fresh clone or worktree. See the [QA artifact policy](QA_ARTIFACT_POLICY.md).
+
 > **Historical snapshot.** This dated report and its original evidence are preserved. For current behavior, test results and release status see the [project baseline](PROJECT_BASELINE.md). Older test totals and machine-local evidence links below are not current portable proof.
 
 # Zekr persistence safety remediation
@@ -119,7 +121,7 @@ ZEKR_QA_CHROME='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
 npm run test:persistence
 ```
 
-Artifacts default to a fresh temporary directory; `ZEKR_QA_OUTPUT` can select an explicit output destination. The new unit tests run with `npm test` without these external browser packages.
+Artifacts default to a fresh ignored `.qa-artifacts/` run folder; `ZEKR_QA_OUTPUT` can select an explicit output destination. The new unit tests run with `npm test` without these external browser packages.
 
 ## Remaining data-loss risks and evidence boundaries
 

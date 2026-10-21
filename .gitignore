@@ -40,21 +40,25 @@ yarn-error.*
 /ios
 /android
 
-docs/*-evidence/
+# Temporary QA outputs (unique run directories; see docs/QA_ARTIFACT_POLICY.md)
+/.qa-artifacts/
 
-# QA test run logs, validation artifacts, and screenshots
-*.log
-docs/**/*.log
-docs/**/*.txt
-docs/**/before/
-docs/**/after/
-docs/**/native/
-docs/**/browser/
-docs/**/screenshots/
-docs/**/validation/
-docs/*/*.jpg
-docs/*/*.png
-docs/*/*.json
+# Historical local-only QA evidence; keep durable Markdown reports trackable.
+/docs/arabic-reading-fix/**
+!/docs/arabic-reading-fix/**/
+!/docs/arabic-reading-fix/**/*.md
+/docs/routines-refinement/**
+!/docs/routines-refinement/**/
+!/docs/routines-refinement/**/*.md
+/docs/routines-ui/**
+!/docs/routines-ui/**/
+!/docs/routines-ui/**/*.md
+/docs/routines/**
+!/docs/routines/**/
+!/docs/routines/**/*.md
+/docs/smart-reading/**
+!/docs/smart-reading/**/
+!/docs/smart-reading/**/*.md
 
 # Local distributable binaries; traceable build records live in docs.
 /artifacts/

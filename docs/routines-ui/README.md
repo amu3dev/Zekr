@@ -1,5 +1,7 @@
 # Guided routines UI recovery — 18 October 2026
 
+> **Local-only evidence:** Linked captures, manifests and validation outputs in this folder are preserved on the original checkout and ignored by Git. They will be unavailable in a fresh clone or worktree. The Markdown report remains portable; see the [QA artifact policy](../QA_ARTIFACT_POLICY.md).
+
 The subsequent [Arabic reading correction and Android evidence](../arabic-reading-fix/README.md) removes the bounded inline scroller and adds measured whole-line reading. This recovery's results remain historical.
 
 **Historical recovery snapshot.** The subsequent [19 October refinement](../routines-refinement/README.md) supersedes the presentation described here. Its validation boundaries are recorded separately; the seven-suite results below apply to this 18 October source.

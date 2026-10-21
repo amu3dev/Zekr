@@ -1,5 +1,7 @@
 # Final UX refinement — 19 October 2026
 
+> **Local-only evidence:** Linked captures, manifests and validation outputs in this folder are preserved on the original checkout and ignored by Git. They will be unavailable in a fresh clone or worktree. The Markdown report remains portable; see the [QA artifact policy](../QA_ARTIFACT_POLICY.md).
+
 The subsequent [Arabic reading correction](../arabic-reading-fix/README.md) supersedes this report's bounded inline preview and adds separately approved Android Expo Go evidence. Results below apply to this earlier refinement snapshot.
 
 This is a focused refinement of the existing uncommitted `master` working tree. It preserves the previous feature and responsive recovery. No new Android screenshots were attached or located in this request, so the matched comparisons use the actual task-start application, frozen before edits, and the resulting application. These are **supported in-app browser / React Native Web** captures, not Android or iOS execution evidence.

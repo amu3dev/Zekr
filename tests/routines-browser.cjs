@@ -9,7 +9,7 @@ const root = path.resolve(__dirname, '..');
 const qaModules = process.env.ZEKR_QA_MODULES || path.join(root, 'node_modules');
 const resolveQA = name => require.resolve(name, { paths: [qaModules] });
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'zekr-routines-'));
-const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
+const output = require('./support/qa-output.cjs')('routines-browser');
 fs.mkdirSync(output, { recursive: true });
 const mocks = {
   'rn.tsx': `import React from 'react'; import {Text as WebText, StyleSheet, Animated as WebAnimated, useWindowDimensions as webDimensions} from 'react-native-web';

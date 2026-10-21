@@ -43,7 +43,7 @@ esbuild.buildSync({
   define: { global: 'globalThis', __DEV__: 'true', 'process.env.NODE_ENV': '"development"', 'process.env.EXPO_OS': '"web"' },
 });
 const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
-const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
+const output = require('./support/qa-output.cjs')('milestones-browser');
 fs.mkdirSync(output, { recursive: true });
 (async () => {
   const browser = await chromium.launch({ headless: true, chromiumSandbox: true, ...(process.env.ZEKR_QA_CHROME ? { executablePath: process.env.ZEKR_QA_CHROME } : {}) });

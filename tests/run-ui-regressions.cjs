@@ -3,9 +3,8 @@
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const root = path.resolve(__dirname, '..');
-const output = process.env.ZEKR_QA_OUTPUT || fs.mkdtempSync(path.join(os.tmpdir(), 'zekr-ui-regressions-'));
+const output = require('./support/qa-output.cjs')('ui-regressions');
 const suites = ['responsive','routines','milestones','persistence','launch','contrast','baseline'];
 const results = [];
 for (const suite of suites) {

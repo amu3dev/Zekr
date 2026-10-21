@@ -53,3 +53,12 @@ Follow: Implementation → Automated Tests → Browser Visual QA → Product Own
 - After SIGABRT, `Abort trap: 6` or a HIServices `_RegisterApplication` failure, stop that launch path and report it. Do not silently retry through another wrapper or launch flag.
 - Keep the sandbox enabled globally and Chromium's sandbox enabled. Never use `--no-sandbox` as a workaround.
 - Report unit/static, browser, native development-runtime, release-build and physical-device evidence separately. Do not claim native validation from browser screenshots.
+
+## QA artifact policy
+
+- Temporary screenshots, videos, traces and logs must not be committed by default.
+- Keep temporary QA outputs in ignored `.qa-artifacts/` run directories. Browser harnesses use unique run folders by default; `ZEKR_QA_OUTPUT` selects an explicit destination.
+- Commit only explicitly curated product screenshots and durable validation summaries.
+- Preserve historical evidence before relocating it; do not overwrite earlier captures.
+- Never stage all generated artifacts automatically; stage reviewed files explicitly.
+- See [QA artifact convention and historical evidence](docs/QA_ARTIFACT_POLICY.md).
