@@ -49,7 +49,7 @@ const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
 const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
 fs.mkdirSync(output, { recursive: true });
 
- const browser=await chromium.launch({headless:true,...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
+ const browser=await chromium.launch({headless:true,chromiumSandbox:true,...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
  const phase=process.env.QA_PHASE || 'after';
  const results=[];
  for(const theme of (process.env.ZEKR_QA_THEMES || 'softIvory,midnightSapphire,royalAmethyst,obsidianEmber,glacierPrism,solarPulse').split(',')) {

@@ -50,7 +50,7 @@ const saved = { count: 202, target: 33, totalSessionCount: 500, dhikrId: 'tasbih
   hapticsEnabled: false, visualEffectsEnabled: false, fullScreenTap: false };
 
 (async () => {
-  const browser = await chromium.launch({ headless: true,
+  const browser = await chromium.launch({ headless: true, chromiumSandbox: true,
     ...(process.env.ZEKR_QA_CHROME ? { executablePath: process.env.ZEKR_QA_CHROME } : {}) });
   const errors = [], results = [];
   async function installFaults(page, faults = {}) {

@@ -54,7 +54,7 @@ const slug = id => id.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
 
 (async () => {
   const {chromium} = require(process.env.ZEKR_QA_PLAYWRIGHT || resolveQA('playwright'));
-  const browser = await chromium.launch({headless:true,
+  const browser = await chromium.launch({headless:true,chromiumSandbox:true,
     ...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
   try {
     const context = await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:1,hasTouch:true,reducedMotion:'reduce'});

@@ -31,7 +31,9 @@
     "test:milestones": "node tests/milestones-browser.cjs",
     "test:persistence": "node tests/persistence-browser.cjs",
     "test:themes": "node tests/contrast-browser.cjs",
-    "test:baseline": "node tests/baseline-browser.cjs"
+    "test:baseline": "node tests/baseline-browser.cjs",
+    "test:routines": "node tests/routines-browser.cjs",
+    "test:responsive": "node tests/responsive-browser.cjs"
   },
   "private": true
 }

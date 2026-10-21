@@ -2,10 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { type CounterState, initialCounterState, MAX_TARGET, sanitizeCounterState } from './counter';
 import { PersistentState } from './persistence';
+import { DEFAULT_READING, parseReadingPreferences, type ReadingPreferences } from './smartReading';
+import { initialRoutineState, parseRoutineState, type RoutineState } from './routines';
 import { DEFAULT_THEME_ID, isThemeId, type ThemeId } from './theme';
 
 const STORAGE_KEY = '@dhikr/counter-state/v1';
 const THEME_STORAGE_KEY = '@dhikr/theme/v1';
+const ROUTINE_STORAGE_KEY = '@dhikr/routines/v1';
 
 /** Native getItem collapses an existing empty string to null. Confirm absence
  * before allowing defaults; unreadable data and uncertain existence fail closed.
@@ -63,6 +66,21 @@ export async function saveThemePreference(themeId: ThemeId): Promise<void> {
   await AsyncStorage.setItem(THEME_STORAGE_KEY, themeId);
 }
 
+export async function loadRoutineState(): Promise<RoutineState | null> {
+  const stored = await loadStoredValue(ROUTINE_STORAGE_KEY);
+  return stored === null ? null : parseRoutineState(JSON.parse(stored));
+}
+
+export async function saveRoutineState(state: RoutineState): Promise<void> {
+  await AsyncStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(state));
+}
+
+export const routinePersistence = new PersistentState({
+  initialValue: initialRoutineState,
+  read: loadRoutineState,
+  write: saveRoutineState,
+});
+
 // Shared owners survive component remounts and StrictMode effect replay. Screens
 // never call the raw writers, so background, retry and autosave cannot race.
 export const counterPersistence = new PersistentState({
@@ -76,4 +94,16 @@ export const themePersistence = new PersistentState({
   read: loadThemePreference,
   write: saveThemePreference,
   intervalMs: 0,
+});
+
+// A separate versioned key cannot migrate, reset or overwrite counting progress.
+export async function loadReadingPreferences(): Promise<ReadingPreferences | null> {
+  const stored = await loadStoredValue('@dhikr/reading/v1');
+  return stored === null ? null : parseReadingPreferences(JSON.parse(stored));
+}
+export async function saveReadingPreferences(value: ReadingPreferences): Promise<void> {
+  await AsyncStorage.setItem('@dhikr/reading/v1', JSON.stringify(value));
+}
+export const readingPersistence = new PersistentState({
+  initialValue: DEFAULT_READING, read: loadReadingPreferences, write: saveReadingPreferences, intervalMs: 0,
 });

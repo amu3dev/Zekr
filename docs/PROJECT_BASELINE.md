@@ -2,7 +2,15 @@
 
 Development baseline verified on 18 October 2026 (Africa/Cairo). This is the authoritative current technical description; it is not a public app release. Dated reports linked below are historical snapshots and do not supersede this document.
 
+**Local feature extension, later on 18 October:** [Guided Dhikr Routines](GUIDED_ROUTINES.md) adds four offline routines, isolated routine persistence, a shared main/Free Tap session and combined statistics. That document and its [browser evidence](routines/README.md) describe the new working-tree feature. APK/native evidence and baseline test counts below describe the earlier baseline and do not validate the new feature on native devices.
+
+The subsequent [UI recovery](routines-ui/README.md) replaces the initial oversized routine integration with a compact responsive counting surface, one dock, source badges and expanded reading. Its reviewed regression batch passed all seven browser suites, including 86 responsive cases and 28 routine scenario groups. The report retains current visual evidence, the first stopped harness attempt and the passing reviewed results; native routine validation remains outstanding.
+
+**19 October UX refinement:** [Current refinement and supported-browser evidence](routines-refinement/README.md) adds distinct settings/routine icons, shared Free Tap decoration, in-app citation details, shared-sequence catalog presentation and counting within expanded reading. The domain/storage/theme contracts remain unchanged. The owner selected supported-browser validation for this round; the earlier seven-suite CLI pass is historical.
+
 ## Repository and provenance
+
+**19 October Arabic reading correction:** [Current reading implementation and evidence](arabic-reading-fix/README.md) removes the bounded inline scroller and measures native whole-line reading geometry. It records 79 passing unit tests, current supported-browser checks and a separately approved Android 14 Expo Go session at normal/enlarged font scales, including nested hardware Back and guided reading transitions. This is development-runtime evidence, not physical-device/release approval. [Proposed permanent QA workflow](QA_WORKFLOW_PROPOSAL.md).
 
 - Repository: `https://github.com/amu3dev/Zekr.git`, public, not archived.
 - Canonical branch: **master**, retained by the owner's explicit correction during this consolidation. No `main` or additional development branch was created.
@@ -24,6 +32,7 @@ The source SHA recorded in screenshots/build metadata is the parent source commi
 | --- | --- |
 | Screen orchestration | `App.tsx`: modal visibility, current dhikr, feedback, main/Free Tap rendering, launch handoff |
 | Domain | `src/counter.ts`: ten dhikr entries, reducer, target validation, safe bounds, legacy sanitization, milestone calculation |
+| Guided routines | `src/routines.ts`: four curated definitions, pure progress engine and strict restoration; `RoutineExperience.tsx`: compact catalog dialog and guided presentation |
 | Beads / Arabic | `src/beads.ts`: independent 33-bead loop; `src/arabic.ts`: Arabic digits, input normalization and ordinals |
 | Main / focus presentation | `CounterRing.tsx`, `FreeTapMode.tsx`: shared derived progression and event callbacks |
 | Theme registry | `src/theme.ts`: semantic tokens, stable IDs, registry-derived options/count; `ThemeProvider.tsx`: selected preference |
@@ -58,6 +67,7 @@ Runtime stack: installed Expo 57.0.30, React Native 0.86.3, React 19.2.3, AsyncS
 | Storage corruption protection | Verified in tests/browser | Malformed JSON/progress/theme, empty native/web payload, uncertain existence and retry cases. |
 | Serialized persistence writes | Verified in tests/browser | One in-flight writer, revisions/latest snapshot, injected delay/failure and retry cases. |
 | Save failure feedback | Verified in browser | StorageNotice, unsaved warning, continued counting, retries and recovery; 13 scenario groups. |
+| Guided Dhikr Routines | Implemented; unit/browser verified, native pending | Four verified source definitions, automatic transitions, boundary/final undo, resume, isolated failures, six themes and narrow/large-text approximation. [Feature contract and new evidence](GUIDED_ROUTINES.md). |
 | Arabic RTL | Verified at captured browser/Android 14 sizes | Arabic labels/digits and explicit RTL styles; all screenshots inspected, including native 33/44 values. Other OS/font-scale behavior remains unverified. |
 | Accessibility | Implemented but not fully verified | Roles/labels/hints, selected props, reduced motion, announcements tested with mocks. Faint-text contrast gaps remain; native screen readers/maximum text scaling untested. |
 | Native splash / launcher assets | Implemented but not fully verified | Referenced emblem and adaptive/monochrome artwork exist. Historical generated-resource proof retained. Current release-device display pending. |
@@ -91,6 +101,8 @@ Primary text, muted text and large counters pass selected opaque-token contrast 
 ## Persistence contract
 
 Keys remain `@dhikr/counter-state/v1` and `@dhikr/theme/v1`. Counter data includes count, target, dhikrId, aggregate count, mode and feedback preferences. Theme data is the stable theme ID. Obsolete cycle metadata is ignored; milestones and bead cycles are derived.
+
+The guided-routine extension adds `@dhikr/routines/v1` without altering either original schema. Routine progress and its aggregate ledger are saved together; Settings adds that ledger to the individual aggregate. [Restoration, invalid-definition protection and reset limitations](GUIDED_ROUTINES.md#persistence-and-statistics).
 
 `PersistentState` is shared per key for the JS runtime. Hydration is single-flight; `loading`/`error` cannot authorize updates/writes. Only successful verified absence allows defaults. A native adapter can collapse an existing empty string to null: `storage.ts` confirms absence through `getAllKeys`, including its callback error, before permitting defaults. Empty/unknown/unreadable payloads remain protected.
 
@@ -146,6 +158,6 @@ The intended product is freely available with a charitable purpose. Future work 
 
 ## Future feature extension points
 
-No future feature is specified or implemented. Extend the existing reducer/domain helpers for counting semantics, registry/tokens for visual identities, shared event callbacks for main/Free Tap parity, and existing modal components for related UI. Keep screen-only modal state separate from persisted domain data.
+Guided routines are now implemented as described in the linked feature document. Further extensions should use reducer/domain helpers for counting semantics, registry/tokens for visual identities, shared event callbacks for main/Free Tap parity, and existing modal components for related UI. Keep screen-only modal state separate from persisted domain data.
 
-Any new stored fields require explicit defaults, compatibility with existing v1 payloads, corruption handling and a migration decision before changing keys. Preserve the failed-read write gate, serialized writer and numeric bounds. Add boundary/reducer and fault-injection coverage for changes, plus real main/Free Tap interactions and native QA when platform behavior is affected. The current single-root architecture and two independent storage keys are constraints, not reasons to introduce speculative routing, backend or persistence infrastructure.
+Any new stored fields require explicit defaults, compatibility with existing v1 payloads, corruption handling and a migration decision before changing keys. Preserve the failed-read write gate, serialized writer and numeric bounds. Add boundary/reducer and fault-injection coverage for changes, plus real main/Free Tap interactions and native QA when platform behavior is affected. The current single-root architecture and independent storage owners are constraints, not reasons to introduce speculative routing, backend or persistence infrastructure.

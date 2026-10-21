@@ -42,6 +42,20 @@ yarn-error.*
 
 docs/*-evidence/
 
+# QA test run logs, validation artifacts, and screenshots
+*.log
+docs/**/*.log
+docs/**/*.txt
+docs/**/before/
+docs/**/after/
+docs/**/native/
+docs/**/browser/
+docs/**/screenshots/
+docs/**/validation/
+docs/*/*.jpg
+docs/*/*.png
+docs/*/*.json
+
 # Local distributable binaries; traceable build records live in docs.
 /artifacts/
 

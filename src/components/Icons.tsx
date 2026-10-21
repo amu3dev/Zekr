@@ -25,6 +25,14 @@ export function MenuIcon({ size = 20, color }: IconProps) {
   );
 }
 
+/** Current-item actions; distinct from the application settings gear. */
+export function MoreIcon({ size = 20, color }: IconProps) {
+  const { theme } = useTheme();
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={color ?? theme.icon}>
+    <Circle cx="5" cy="12" r="1.8" /><Circle cx="12" cy="12" r="1.8" /><Circle cx="19" cy="12" r="1.8" />
+  </Svg>;
+}
+
 export function UndoIcon({ size = 20, color }: IconProps) {
   const { theme } = useTheme();
   const stroke = color ?? theme.icon;

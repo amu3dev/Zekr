@@ -46,7 +46,7 @@ const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
 const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
 fs.mkdirSync(output, { recursive: true });
 (async () => {
-  const browser = await chromium.launch({ headless: true, ...(process.env.ZEKR_QA_CHROME ? { executablePath: process.env.ZEKR_QA_CHROME } : {}) });
+  const browser = await chromium.launch({ headless: true, chromiumSandbox: true, ...(process.env.ZEKR_QA_CHROME ? { executablePath: process.env.ZEKR_QA_CHROME } : {}) });
   const results = [];
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, reducedMotion: 'reduce' });
   const page = await context.newPage();
@@ -139,7 +139,7 @@ fs.mkdirSync(output, { recursive: true });
   await burst(99, 'FreeTapMode');
   await value(free, 200, 100);
   await page.screenshot({path: output + '/free-200-browser.png'});
-  await free.click({position: {x: 10, y: 300}});
+  await free.click({position: {x: 2, y: 300}});
   await value(free, 201, 100);
   await page.screenshot({path: output + '/free-201-browser.png'});
   await page.waitForTimeout(450);

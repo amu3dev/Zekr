@@ -6,6 +6,8 @@ import ts from 'typescript';
 import * as counter from '../../src/counter.ts';
 import * as persistence from '../../src/persistence.ts';
 import * as theme from '../../src/theme.ts';
+import * as routines from '../../src/routines.ts';
+import * as smartReading from '../../src/smartReading.ts';
 
 const require = createRequire(import.meta.url);
 const packageRoot = fileURLToPath(new URL('../../node_modules/@react-native-async-storage/async-storage/', import.meta.url));
@@ -71,7 +73,7 @@ export function adapterFixture(platform, entries = []) {
   }).outputText;
   const storage = evaluateCommonJS(storageFile, {
     '@react-native-async-storage/async-storage': { __esModule: true, default: adapter },
-    './counter': counter, './persistence': persistence, './theme': theme,
+    './counter': counter, './persistence': persistence, './theme': theme, './routines': routines, './smartReading': smartReading,
   }, {}, source);
   return { adapter, storage, disk, calls, faults };
 }

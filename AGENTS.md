@@ -39,3 +39,17 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Android development and QA workflow
+
+Follow: Implementation → Automated Tests → Browser Visual QA → Product Owner Review → Final Native QA.
+
+- During ordinary development and UI refinement, prefer existing unit, integration, browser and responsive QA.
+- Reuse an already running, accessible Android device or emulator when permitted. A code change does not require a new emulator session. Request native emulator execution only during an explicitly approved Native QA phase.
+- Do not automatically launch new AVD instances or repeatedly request emulator launch permission during ordinary iterations.
+- If no Android device/emulator is available, continue with available automated/browser validation. Record native validation as pending; do not interrupt implementation to request an emulator.
+- Request a new emulator launch only when the owner has explicitly authorized a Native QA phase and a new session is necessary. Obtain approval for the exact launch command through the supported approval mechanism; reuse that session afterward.
+- This workflow does not waive sandbox, system or macOS GUI/browser launch restrictions. Never launch GUI/browser executables, including indirect or headless launches, from the restricted macOS execution sandbox. Prefer supported browser-control integrations. Any necessary outside-sandbox launch still requires explicit approval for its specific command; saved allow rules are insufficient.
+- After SIGABRT, `Abort trap: 6` or a HIServices `_RegisterApplication` failure, stop that launch path and report it. Do not silently retry through another wrapper or launch flag.
+- Keep the sandbox enabled globally and Chromium's sandbox enabled. Never use `--no-sandbox` as a workaround.
+- Report unit/static, browser, native development-runtime, release-build and physical-device evidence separately. Do not claim native validation from browser screenshots.

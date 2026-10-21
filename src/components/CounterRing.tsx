@@ -13,6 +13,7 @@ import { getCycleText, toArabicDigits } from '../arabic';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { getActiveBeadCount, getBeadCycle, TOTAL_BEADS } from '../beads';
 import { getMilestoneProgress } from '../counter';
+import type { RoutineProgress } from '../routines';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
 
@@ -33,15 +34,20 @@ type Props = {
   completion: string | null;
   effectsEnabled: boolean;
   disabled?: boolean;
+  guided?: RoutineProgress;
+  decorative?: boolean;
   onPress: () => void;
 };
 
 
-export function CounterRing({ size, count, target, title, completion, effectsEnabled, disabled, onPress }: Props) {
+export function CounterRing({ size, count, target, title, completion, effectsEnabled, disabled, guided, decorative, onPress }: Props) {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const reduceMotion = useReducedMotion() !== false || !effectsEnabled;
-  const { activeMilestone, intervalCount, progress } = getMilestoneProgress(count, target);
+  const { activeMilestone, intervalCount, progress } = guided
+    ? { activeMilestone: target, intervalCount: count, progress: count / target }
+    : getMilestoneProgress(count, target);
+  const countingDisabled = disabled || guided?.completed;
   const cycle = getBeadCycle(count);
   const [pressScale] = useState(() => new Animated.Value(1));
   const [rippleAnim] = useState(() => new Animated.Value(0));
@@ -287,12 +293,15 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
         ]}
       >
         <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`عدّاد ${title}`}
-          accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)} في الهدف الحالي` }}
+          accessible={!decorative}
+          accessibilityRole={decorative ? undefined : 'button'}
+          accessibilityLabel={decorative ? undefined : `عدّاد ${title}`}
+          accessibilityValue={{ text: guided
+            ? `المرحلة ${toArabicDigits(guided.stepIndex + 1)} من ${toArabicDigits(guided.routine.steps.length)}، ${toArabicDigits(count)} من ${toArabicDigits(target)}، التقدم الكلي ${toArabicDigits(guided.overall)} من ${toArabicDigits(guided.routine.total)}`
+            : `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)} في الهدف الحالي` }}
           accessibilityHint={`اضغط للتسبيح، ${getCycleText(cycle)}، ${toArabicDigits(getActiveBeadCount(count))} من ٣٣ حبة، تقدّم الحلقة في الفترة الحالية: ${toArabicDigits(intervalCount)} من ${toArabicDigits(target)}`}
-          accessibilityState={{ disabled }}
-          disabled={disabled}
+          accessibilityState={{ disabled: countingDisabled }}
+          disabled={countingDisabled || decorative}
           onPressIn={runPressAnimation}
           onPressOut={runReleaseAnimation}
           onPress={handlePress}
@@ -318,6 +327,7 @@ export function CounterRing({ size, count, target, title, completion, effectsEna
                 { fontSize: countFontSize, width: '100%', height: '100%' },
               ]}
               testID="central-counter-text"
+              maxFontSizeMultiplier={1.3}
               adjustsFontSizeToFit
               numberOfLines={1}
             >

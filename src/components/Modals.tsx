@@ -20,6 +20,7 @@ import type { ThemeTokens } from '../theme';
 import { BookIcon, CheckIcon, ChevronDownIcon, CloseIcon, FullScreenIcon, SparkleIcon, VibrateIcon } from './Icons';
 import { CurrentThemeCard, ThemeGallery } from './ThemeGallery';
 import { StorageSaveNotice } from './StorageNotice';
+import { ReadingPreferences } from './ReadingPreferences';
 
 type ShellProps = {
   visible: boolean;
@@ -37,7 +38,7 @@ function useModalStyles() {
   return useMemo(() => createStyles(theme), [theme]);
 }
 
-function ModalShell({
+export function ModalShell({
   visible, title, subtitle, onClose, children,
   closeLabel = 'إغلاق', animationType = 'fade', textScaleLimit,
 }: ShellProps) {
@@ -356,6 +357,7 @@ type SettingsProps = {
   visualEffectsEnabled: boolean;
   fullScreenTap: boolean;
   totalSessionCount: number;
+  statisticsIncomplete?: boolean;
   onClose: () => void;
   onToggleHaptics: (enabled: boolean) => void;
   onToggleVisualEffects: (enabled: boolean) => void;
@@ -369,6 +371,7 @@ export function SettingsModal({
   visualEffectsEnabled,
   fullScreenTap,
   totalSessionCount,
+  statisticsIncomplete = false,
   onClose,
   onToggleHaptics,
   onToggleVisualEffects,
@@ -399,6 +402,7 @@ export function SettingsModal({
         <ThemeGallery />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false} style={styles.settingsScroll}>
+          {visible && <ReadingPreferences />}
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>المظهر</Text>
             <Text style={styles.sectionHint}>يتغير فورًا</Text>
@@ -490,10 +494,13 @@ export function SettingsModal({
             <Text style={styles.statsLabel}>مجموع التسبيحات الكلي</Text>
             <Text style={styles.statsCount}>{formatArabicNumber(totalSessionCount)}</Text>
             <Text style={styles.statsSubtext}>تسبيحة وذكر بحمد الله</Text>
+            {statisticsIncomplete && <Text style={styles.statsSubtext}>إحصائيات الأوراد غير متاحة حتى استعادة بياناتها.</Text>}
 
             {totalSessionCount > 0 && (
               <Pressable
                 accessibilityRole="button"
+                accessibilityState={{ disabled: statisticsIncomplete }}
+                disabled={statisticsIncomplete}
                 onPress={onResetStats}
                 style={({ pressed }) => [styles.resetStatsButton, pressed && styles.pressed]}
               >

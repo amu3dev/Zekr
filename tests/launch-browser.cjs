@@ -29,7 +29,7 @@ const bundle = fs.readFileSync(path.join(scratch, 'bundle.js'), 'utf8');
 const output = process.env.ZEKR_QA_OUTPUT ? path.resolve(process.env.ZEKR_QA_OUTPUT) : path.join(scratch, 'results');
 fs.mkdirSync(output, { recursive: true });
 (async()=>{
- const browser=await chromium.launch({headless:true,...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
+ const browser=await chromium.launch({headless:true,chromiumSandbox:true,...(process.env.ZEKR_QA_CHROME ? {executablePath:process.env.ZEKR_QA_CHROME} : {})});
  const results=[];
  async function pageFor({reduce=false,theme=null,video=false,counter=null}={}){
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,hasTouch:true,reducedMotion:reduce?'reduce':'no-preference',...(video?{recordVideo:{dir:path.join(scratch,'video'),size:{width:390,height:844}}}:{})});

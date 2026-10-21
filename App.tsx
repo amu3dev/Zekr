@@ -17,21 +17,19 @@ import {
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toArabicDigits } from './src/arabic';
+import { CountingDock } from './src/components/CountingDock';
+import { DhikrReader } from './src/components/DhikrReader';
 import { CounterRing } from './src/components/CounterRing';
 import { FreeTapMode } from './src/components/FreeTapMode';
 import { LaunchExperience } from './src/components/LaunchExperience';
 import { StorageNotice } from './src/components/StorageNotice';
+import { RoutineActions, RoutineButton, RoutineCatalog, RoutineFreeTap, RoutineHeader, RoutineProgressStrip, routineProgressLabel } from './src/components/RoutineExperience';
 import { usePersistentState } from './src/hooks/usePersistentState';
 import {
-  BookIcon,
   ChevronDownIcon,
-  FullScreenIcon,
-  MenuIcon,
-  ResetIcon,
-  RosetteClasp,
   SettingsIcon,
+  RosetteClasp,
   SparkleIcon,
-  UndoIcon,
 } from './src/components/Icons';
 import { IslamicGeometryBackground } from './src/components/IslamicGeometry';
 import {
@@ -51,7 +49,8 @@ import {
 import { ThemeProvider } from './src/ThemeProvider';
 import { useTheme } from './src/theme';
 import type { ThemeTokens } from './src/theme';
-import { counterPersistence, themePersistence } from './src/storage';
+import { counterPersistence, routinePersistence, themePersistence } from './src/storage';
+import { getRoutineProgress, routineReducer, type RoutineAction } from './src/routines';
 
 // Keep the native Midnight Sapphire launch identity in place until both the
 // persisted theme and the counter state are ready to render the first frame.
@@ -68,6 +67,8 @@ type OpenModal =
   | 'dhikrPicker'
   | 'resetConfirm'
   | 'resetStatsConfirm'
+  | 'routineOptions'
+  | 'routineConfirm'
   | null;
 
 function playHaptic(kind: 'tap' | 'success' | 'warning', enabled: boolean) {
@@ -85,11 +86,18 @@ function CounterScreen() {
   const { isReady: isThemeReady, theme, hydration: themeHydration, saveStatus: themeSaveStatus } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
+  const [ringAreaHeight, setRingAreaHeight] = useState(300);
   const { value: state, hydration, saveStatus } = usePersistentState(counterPersistence);
+  const { value: routineState, hydration: routineHydration, saveStatus: routineSaveStatus } = usePersistentState(routinePersistence);
+  const [catalogVisible, setCatalogVisible] = useState(false);
+  const [pendingRoutine, setPendingRoutine] = useState<RoutineAction | null>(null);
+  const routineReady = routineHydration !== 'loading';
+  const guided = routineHydration === 'ready' && routineState.inRoutine && routineState.session
+    ? getRoutineProgress(routineState.session) : undefined;
   const isLoaded = hydration === 'ready';
   const hasHydrationError = hydration === 'error' || themeHydration === 'error';
-  const hasSaveError = saveStatus === 'error' || themeSaveStatus === 'error';
+  const hasSaveError = saveStatus === 'error' || themeSaveStatus === 'error' || routineSaveStatus === 'error';
   const [isRecoveryLaidOut, setIsRecoveryLaidOut] = useState(false);
   const [isHomeLaidOut, setIsHomeLaidOut] = useState(false);
   const [launchVisible, setLaunchVisible] = useState(true);
@@ -97,6 +105,7 @@ function CounterScreen() {
   const nativeHidden = useRef(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
   const [pendingDhikr, setPendingDhikr] = useState<DhikrOption | null>(null);
+  const mainScroll = useRef<ScrollView>(null);
 
   const [completion, setCompletion] = useState<string | null>(null);
   // Track queued actions with the same reducer, so feedback and background
@@ -114,26 +123,86 @@ function CounterScreen() {
   }, [completion]);
 
   useEffect(() => {
-    const canShowHome = isLoaded && isThemeReady && isHomeLaidOut;
+    const canShowHome = isLoaded && isThemeReady && routineReady && isHomeLaidOut;
     if ((canShowHome || (hasHydrationError && isRecoveryLaidOut)) && !nativeHidden.current) {
       nativeHidden.current = true;
       SplashScreen.hideAsync().catch(() => undefined);
     }
-  }, [isHomeLaidOut, isLoaded, isThemeReady, hasHydrationError, isRecoveryLaidOut]);
+  }, [isHomeLaidOut, isLoaded, isThemeReady, routineReady, hasHydrationError, isRecoveryLaidOut]);
 
   const retryStorage = useCallback(() => {
     void counterPersistence.retry();
     void themePersistence.retry();
+    void routinePersistence.retry();
   }, []);
 
   const dhikr = getDhikr(state.dhikrId);
+  const { activeMilestone } = getMilestoneProgress(state.count, state.target);
   const isPresetTarget = (PRESET_TARGETS as readonly number[]).includes(state.target);
   const availableHeight = height - insets.top - insets.bottom;
-  const ringSize = Math.round(Math.max(200, Math.min(width - 28, availableHeight * 0.44, 350)));
+  const fitsCounting = fontScale <= 1.25 && availableHeight >= 540 && routineHydration !== 'error';
+  const compactCounting = fitsCounting && availableHeight < 650;
+  const ringSize = Math.round(Math.max(120, Math.min(width - 44,
+    fitsCounting ? ringAreaHeight - 24 : availableHeight * 0.4, 350)));
   const geometrySize = ringSize * 1.16;
-  const canUndo = state.count > 0;
+  const canUndo = guided ? guided.overall > 0 : state.count > 0;
+
+  const dispatchRoutine = (action: RoutineAction) => {
+    setCompletion(null);
+    return routinePersistence.update(current => routineReducer(current, action));
+  };
+  const leaveRoutine = () => {
+    dispatchRoutine({ type: 'leave' });
+    dispatchCounter({ type: 'setFullScreenTap', enabled: false });
+    mainScroll.current?.scrollTo({ y: 0, animated: false });
+  };
+  const selectRoutine = (routineId: string) => {
+    const current = routinePersistence.getSnapshot().value;
+    if (current.session?.routineId === routineId) {
+      dispatchRoutine({ type: 'resume' });
+      setCatalogVisible(false);
+      mainScroll.current?.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    const action: RoutineAction = { type: 'start', routineId };
+    if (current.session && current.session.completedRepetitions > 0 && !getRoutineProgress(current.session).completed) {
+      setCatalogVisible(false);
+      setPendingRoutine(action);
+      setOpenModal('routineConfirm');
+    } else {
+      dispatchRoutine(action);
+      setCatalogVisible(false);
+      mainScroll.current?.scrollTo({ y: 0, animated: false });
+    }
+  };
+  const restartRoutine = () => {
+    setPendingRoutine({ type: 'restart' });
+    setOpenModal('routineConfirm');
+  };
+  const handleRoutineTap = (type: 'increment' | 'undo') => {
+    const before = routinePersistence.getSnapshot().value;
+    if (!before.inRoutine || !before.session) return;
+    const previous = getRoutineProgress(before.session);
+    const next = dispatchRoutine({ type });
+    if (next === before || !next.session) return;
+    const progress = getRoutineProgress(next.session);
+    const transition = previous.stepIndex !== progress.stepIndex || previous.completed !== progress.completed;
+    if (transition) {
+      const message = progress.completed ? 'أتممت الورد بحمد الله'
+        : `${progress.dhikr.phrase}، ${routineProgressLabel(progress)}`;
+      setCompletion(progress.completed ? null : 'انتقلت المرحلة');
+      // Event-based: no repeated announcements on theme/save/rerender changes.
+      // Keep focus on the existing counting control rather than moving it away.
+      AccessibilityInfo.announceForAccessibility(message);
+    }
+    playHaptic(transition && type === 'increment' ? 'success' : 'tap', state.hapticsEnabled);
+  };
 
   const handleIncrement = () => {
+    if (routinePersistence.getSnapshot().value.inRoutine && routineHydration === 'ready') {
+      handleRoutineTap('increment');
+      return;
+    }
     const previousCount = counterPersistence.getSnapshot().value.count;
     const next = dispatchCounter({ type: 'increment' });
     if (next.count === previousCount) return;
@@ -149,6 +218,7 @@ function CounterScreen() {
   };
 
   const handleUndo = () => {
+    if (guided) { handleRoutineTap('undo'); return; }
     if (!canUndo) return;
     dispatchCounter({ type: 'undo' });
     playHaptic('tap', state.hapticsEnabled);
@@ -181,6 +251,7 @@ function CounterScreen() {
   const handleExitFullScreenTap = () => {
     dispatchCounter({ type: 'setFullScreenTap', enabled: false });
     playHaptic('tap', state.hapticsEnabled);
+    if (guided) mainScroll.current?.scrollTo({ y: 0, animated: false });
   };
 
   return (
@@ -194,14 +265,16 @@ function CounterScreen() {
       <StatusBar style={theme.statusBarStyle} />
       <View pointerEvents="none" style={styles.backgroundOrb} />
 
-      {isLoaded && isThemeReady && (
+      {isLoaded && isThemeReady && routineReady && (
         <View
+          aria-hidden={launchVisible}
           accessibilityElementsHidden={launchVisible}
           importantForAccessibility={launchVisible ? 'no-hide-descendants' : 'auto'}
           onLayout={() => setIsHomeLaidOut(true)}
           style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom }]}
         >
           <View
+            aria-hidden={state.fullScreenTap}
             accessibilityElementsHidden={state.fullScreenTap}
             importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
             style={styles.topBar}
@@ -220,18 +293,32 @@ function CounterScreen() {
               onPress={() => setOpenModal('settings')}
               style={({ pressed }) => [styles.menuButton, pressed && styles.pressed]}
             >
-              <MenuIcon size={20} color={theme.warm} />
+              <SettingsIcon size={20} color={theme.warm} />
             </Pressable>
           </View>
 
           <ScrollView
+            aria-hidden={state.fullScreenTap}
+            ref={mainScroll}
+            testID="counting-scroll"
+            scrollEnabled={!fitsCounting}
             accessibilityElementsHidden={state.fullScreenTap}
             bounces={false}
-            contentContainerStyle={styles.scrollContainer}
+            contentContainerStyle={[styles.scrollContainer, fitsCounting && styles.fitContainer]}
             importantForAccessibility={state.fullScreenTap ? 'no-hide-descendants' : 'auto'}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.scrollContent}>
+            <View style={[styles.scrollContent, fitsCounting && styles.fitContent]}>
+              {routineHydration === 'error' ? <View style={{ gap: 8 }}>
+                <Text style={{ color: theme.text, textAlign: 'center' }}>تعذّر استعادة الورد المحفوظ. يمكنك متابعة التسبيح الفردي؛ لم نغيّر بيانات الورد.</Text>
+                <RoutineButton label="إعادة محاولة استعادة الورد" onPress={() => { void routinePersistence.retry(); }} />
+              </View> : null}
+              {guided ? <RoutineHeader progress={guided} onTap={handleIncrement} onUndo={handleUndo} /> : dhikr.phrase.length > 80 ? (
+                <View style={[styles.dhikrCard, { paddingVertical: 8, paddingHorizontal: 12 }]}>
+                  <DhikrReader phrase={dhikr.phrase} title={dhikr.title} details={dhikr.virtue} testID="single-dhikr-phrase"
+                    counter={{ value: `${toArabicDigits(state.count)} من ${toArabicDigits(activeMilestone)}`, canUndo, onTap: handleIncrement, onUndo: handleUndo }} />
+                </View>
+              ) : (
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`الذكر الحالي: ${dhikr.phrase}، اضغط لتغيير الذكر`}
@@ -256,7 +343,7 @@ function CounterScreen() {
                   {dhikr.phrase}
                 </Text>
 
-                {dhikr.virtue ? (
+                {dhikr.virtue && !compactCounting ? (
                   <View style={styles.virtueSnippet}>
                     <SparkleIcon size={12} color={theme.warm} />
                     <Text style={styles.virtueSnippetText} numberOfLines={1}>
@@ -265,28 +352,32 @@ function CounterScreen() {
                   </View>
                 ) : null}
               </Pressable>
+              )}
 
-              <View style={styles.ringSection}>
+              <View testID="ring-section" onLayout={event => setRingAreaHeight(event.nativeEvent.layout.height)}
+                style={[styles.ringSection, fitsCounting ? styles.flexRingSection : { height: ringSize + 28 }]}>
                 <View pointerEvents="none" style={styles.geometryWrapper}>
                   <IslamicGeometryBackground size={geometrySize} opacity={0.72} />
                 </View>
                 <CounterRing
                   size={ringSize}
-                  count={state.count}
-                  target={state.target}
-                  title={dhikr.title}
+                  count={guided ? guided.stepCount : state.count}
+                  target={guided ? guided.stepTarget : state.target}
+                  title={guided ? guided.dhikr.title : dhikr.title}
+                  guided={guided}
                   completion={completion}
                   effectsEnabled={state.visualEffectsEnabled}
                   onPress={handleIncrement}
                 />
               </View>
 
+              {guided ? <RoutineProgressStrip progress={guided} /> : (
               <View style={styles.targetSection} accessibilityRole="radiogroup" accessibilityLabel="الهدف">
                 <View style={styles.targetHeading}>
                   <Text style={styles.targetTitle}>الهدف</Text>
                   <Text style={styles.targetHint}>اختر مقدار الورد</Text>
                 </View>
-                <View style={styles.targetRow}>
+                <View style={[styles.targetRow, fontScale > 1.25 && styles.targetsReflow]}>
                   {PRESET_TARGETS.map((target) => {
                     const isSelected = state.target === target;
                     return (
@@ -301,6 +392,7 @@ function CounterScreen() {
                         }}
                         style={({ pressed }) => [
                           styles.targetChip,
+                          fontScale > 1.25 && styles.targetChipReflow,
                           isSelected && styles.targetChipSelected,
                           pressed && styles.pressed,
                         ]}
@@ -324,6 +416,7 @@ function CounterScreen() {
                     style={({ pressed }) => [
                       styles.targetChip,
                       styles.customChip,
+                      fontScale > 1.25 && styles.targetChipReflow,
                       !isPresetTarget && styles.targetChipSelected,
                       pressed && styles.pressed,
                     ]}
@@ -334,80 +427,25 @@ function CounterScreen() {
                   </Pressable>
                 </View>
               </View>
+              )}
 
-              <View style={styles.bottomDock}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="تراجع"
-                  accessibilityState={{ disabled: !canUndo }}
-                  disabled={!canUndo}
-                  onPress={handleUndo}
-                  style={({ pressed }) => [styles.dockItem, !canUndo && styles.disabled, pressed && styles.pressed]}
-                >
-                  <UndoIcon size={19} color={canUndo ? theme.iconAccent : theme.textFaint} />
-                  <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>تراجع</Text>
-                </Pressable>
-
-                <View style={styles.dockDivider} />
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="إعادة تعيين"
-                  accessibilityState={{ disabled: !canUndo }}
-                  disabled={!canUndo}
-                  onPress={() => setOpenModal('resetConfirm')}
-                  style={({ pressed }) => [styles.dockItem, !canUndo && styles.disabled, pressed && styles.pressed]}
-                >
-                  <ResetIcon size={19} color={canUndo ? theme.iconAccent : theme.textFaint} />
-                  <Text style={[styles.dockItemLabel, !canUndo && styles.disabledText]}>إعادة تعيين</Text>
-                </Pressable>
-
-                <View style={styles.dockDivider} />
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="مكتبة الأذكار"
-                  onPress={() => setOpenModal('dhikrPicker')}
-                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
-                >
-                  <BookIcon size={19} color={theme.iconAccent} />
-                  <Text style={styles.dockItemLabel}>الأذكار</Text>
-                </Pressable>
-
-                <View style={styles.dockDivider} />
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="النقر الحر"
-                  onPress={() => {
-                    dispatchCounter({ type: 'setFullScreenTap', enabled: true });
-                    playHaptic('tap', state.hapticsEnabled);
-                  }}
-                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
-                >
-                  <FullScreenIcon size={19} color={theme.iconAccent} />
-                  <Text style={styles.dockItemLabel}>النقر الحر</Text>
-                </Pressable>
-
-                <View style={styles.dockDivider} />
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="الإعدادات"
-                  onPress={() => setOpenModal('settings')}
-                  style={({ pressed }) => [styles.dockItem, pressed && styles.pressed]}
-                >
-                  <SettingsIcon size={19} color={theme.iconAccent} />
-                  <Text style={styles.dockItemLabel}>الإعدادات</Text>
-                </Pressable>
-              </View>
+              <CountingDock guided={!!guided} canUndo={canUndo} routinesAvailable={routineHydration === 'ready'} onUndo={handleUndo}
+                onReset={() => setOpenModal('resetConfirm')} onLibrary={() => setOpenModal('dhikrPicker')}
+                onRoutines={() => { if (routineHydration === 'ready') setCatalogVisible(true); }}
+                onFreeTap={() => {
+                  dispatchCounter({ type: 'setFullScreenTap', enabled: true });
+                  playHaptic('tap', state.hapticsEnabled);
+                }} onOptions={() => setOpenModal('routineOptions')} />
 
               <Text style={styles.privacyNote}>بياناتك محفوظة على جهازك فقط</Text>
             </View>
           </ScrollView>
 
           {state.fullScreenTap ? (
-            <FreeTapMode
+            guided ? <RoutineFreeTap progress={guided} effectsEnabled={state.visualEffectsEnabled}
+              topInset={insets.top} bottomInset={insets.bottom} onTap={handleIncrement} onUndo={handleUndo}
+              onExit={handleExitFullScreenTap} onRestart={restartRoutine} onLeave={leaveRoutine}
+              onBrowse={() => setCatalogVisible(true)} /> : <FreeTapMode
               bottomInset={insets.bottom}
               count={state.count}
               completion={completion}
@@ -415,12 +453,19 @@ function CounterScreen() {
               effectsEnabled={state.visualEffectsEnabled}
               onExit={handleExitFullScreenTap}
               onTap={handleIncrement}
+              onUndo={handleUndo}
               target={state.target}
               topInset={insets.top}
             />
           ) : null}
         </View>
       )}
+
+      <RoutineCatalog visible={catalogVisible && routineHydration === 'ready'} session={routineState.session}
+        onSelect={selectRoutine} onClose={() => setCatalogVisible(false)} />
+      {guided && <RoutineActions visible={openModal === 'routineOptions'} progress={guided}
+        onClose={() => setOpenModal(null)} onRestart={restartRoutine} onLeave={leaveRoutine}
+        onBrowse={() => setCatalogVisible(true)} />}
 
       <DhikrPickerModal
         visible={openModal === 'dhikrPicker'}
@@ -444,7 +489,8 @@ function CounterScreen() {
         hapticsEnabled={state.hapticsEnabled}
         visualEffectsEnabled={state.visualEffectsEnabled}
         fullScreenTap={state.fullScreenTap}
-        totalSessionCount={state.totalSessionCount}
+        totalSessionCount={Math.min(Number.MAX_SAFE_INTEGER, state.totalSessionCount + routineState.totalRecorded)}
+        statisticsIncomplete={routineHydration !== 'ready'}
         onClose={() => setOpenModal(null)}
         onToggleHaptics={(enabled) => dispatchCounter({ type: 'setHaptics', enabled })}
         onToggleVisualEffects={(enabled) => dispatchCounter({ type: 'setVisualEffects', enabled })}
@@ -455,15 +501,31 @@ function CounterScreen() {
       <ConfirmModal
         visible={openModal === 'resetStatsConfirm'}
         title="تصفير الإحصائيات"
-        message="سيؤدي هذا الإجراء إلى حذف إجمالي التسبيحات والعداد نهائيًا. هل تريد المتابعة؟"
+        message="سيؤدي هذا الإجراء إلى تصفير إجمالي التسبيحات والعداد الفردي وتقدم الورد المحفوظ. هل تريد المتابعة؟"
         confirmLabel="نعم، حذف وتصفير"
         onClose={() => setOpenModal('settings')}
         onConfirm={() => {
           dispatchCounter({ type: 'resetAll' });
+          dispatchRoutine({ type: 'resetAll' });
           playHaptic('warning', state.hapticsEnabled);
           setOpenModal('settings');
         }}
       />
+
+      <ConfirmModal visible={openModal === 'routineConfirm'}
+        title={pendingRoutine?.type === 'start' ? 'تغيير الورد' : 'إعادة بدء الورد'}
+        message="سيُستبدل تقدم الورد الحالي ويبدأ العدّ من الصفر. يبقى إجمالي التسبيحات المسجلة محفوظًا. هل تريد المتابعة؟"
+        confirmLabel="نعم، ابدأ الورد" onClose={() => {
+          if (pendingRoutine?.type === 'start') setCatalogVisible(true);
+          setPendingRoutine(null); setOpenModal(null);
+        }}
+        onConfirm={() => {
+          if (pendingRoutine) dispatchRoutine(pendingRoutine);
+          setPendingRoutine(null);
+          setCatalogVisible(false);
+          setOpenModal(null);
+          mainScroll.current?.scrollTo({ y: 0, animated: false });
+        }} />
 
       <ConfirmModal
         visible={openModal === 'resetConfirm'}
@@ -482,7 +544,7 @@ function CounterScreen() {
       />
       {launchVisible && !hasHydrationError && (
         <LaunchExperience
-          ready={isLoaded && isThemeReady && isHomeLaidOut}
+          ready={isLoaded && isThemeReady && routineReady && isHomeLaidOut}
           onFinish={finishLaunch}
         />
       )}
@@ -530,6 +592,7 @@ function createStyles(theme: ThemeTokens) {
     screen: {
       backgroundColor: theme.background,
       flex: 1,
+      overflow: 'hidden',
     },
     backgroundOrb: {
       backgroundColor: theme.accent,
@@ -563,9 +626,9 @@ function createStyles(theme: ThemeTokens) {
       borderColor: theme.surfaceBorder,
       borderRadius: 21,
       borderWidth: 1,
-      height: 42,
+      height: 44,
       justifyContent: 'center',
-      width: 42,
+      width: 44,
     },
     titleSection: {
       alignItems: 'center',
@@ -589,6 +652,9 @@ function createStyles(theme: ThemeTokens) {
       fontSize: 10.5,
       marginTop: 1,
     },
+    fitContainer: { flex: 1 },
+    fitContent: { flex: 1, minHeight: 0 },
+    flexRingSection: { flex: 1, minHeight: 0, width: '100%' },
     scrollContainer: {
       flexGrow: 1,
       paddingBottom: 12,
@@ -596,9 +662,9 @@ function createStyles(theme: ThemeTokens) {
     scrollContent: {
       alignItems: 'center',
       flexGrow: 1,
-      gap: 15,
+      gap: 9,
       paddingHorizontal: 18,
-      paddingTop: 11,
+      paddingTop: 10,
       width: '100%',
     },
     dhikrCard: {
@@ -708,6 +774,8 @@ function createStyles(theme: ThemeTokens) {
       color: theme.textDim,
       fontSize: 11,
     },
+    targetsReflow: { flexWrap: 'wrap' },
+    targetChipReflow: { flexBasis: '30%', minWidth: 84, flexGrow: 1, flexShrink: 1 },
     targetRow: {
       flexDirection: 'row',
       gap: 7,
@@ -720,7 +788,8 @@ function createStyles(theme: ThemeTokens) {
       borderRadius: 18,
       borderWidth: 1,
       flex: 1,
-      height: 42,
+      minHeight: 44,
+      paddingVertical: 8,
       justifyContent: 'center',
     },
     customChip: {
@@ -739,43 +808,6 @@ function createStyles(theme: ThemeTokens) {
       color: theme.onWarm,
       fontWeight: '800',
     },
-    bottomDock: {
-      alignItems: 'center',
-      backgroundColor: theme.dockBackground,
-      borderColor: theme.dockBorder,
-      borderRadius: 26,
-      borderWidth: 1,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      maxWidth: 440,
-      paddingHorizontal: 7,
-      paddingVertical: 9,
-      width: '100%',
-      shadowColor: theme.background,
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 7,
-      zIndex: 20,
-    },
-    dockItem: {
-      alignItems: 'center',
-      flex: 1,
-      gap: 4,
-      justifyContent: 'center',
-      minHeight: 42,
-      paddingVertical: 2,
-    },
-    dockItemLabel: {
-      color: theme.textMuted,
-      fontSize: 10,
-      fontWeight: '600',
-    },
-    dockDivider: {
-      backgroundColor: theme.dockDivider,
-      height: 25,
-      width: 1,
-    },
     privacyNote: {
       color: theme.textFaint,
       fontSize: 10.5,
@@ -784,12 +816,6 @@ function createStyles(theme: ThemeTokens) {
     pressed: {
       opacity: 0.72,
       transform: [{ scale: 0.98 }],
-    },
-    disabled: {
-      opacity: 0.38,
-    },
-    disabledText: {
-      color: theme.textFaint,
     },
   });
 }

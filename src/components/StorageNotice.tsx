@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { counterPersistence, themePersistence } from '../storage';
+import { counterPersistence, routinePersistence, themePersistence } from '../storage';
 import { useTheme } from '../theme';
 
 /** Native Modals sit above the root view, so surface unsaved progress there too. */
@@ -9,12 +9,15 @@ export function StorageSaveNotice() {
   const { saveStatus } = useTheme();
   const counterFailed = useSyncExternalStore(counterPersistence.subscribe,
     () => counterPersistence.getSnapshot().saveStatus === 'error');
-  if (!counterFailed && saveStatus !== 'error') return null;
+  const routineFailed = useSyncExternalStore(routinePersistence.subscribe,
+    () => routinePersistence.getSnapshot().saveStatus === 'error');
+  if (!counterFailed && !routineFailed && saveStatus !== 'error') return null;
   return (
     <ScrollView style={styles.modalNotice}>
       <StorageNotice initialization={false} onRetry={() => {
         void counterPersistence.retry();
         void themePersistence.retry();
+        void routinePersistence.retry();
       }} />
     </ScrollView>
   );

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Animated,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -16,6 +17,9 @@ import { getBeadCycle } from '../beads';
 import { useTheme } from '../theme';
 import type { ThemeTokens } from '../theme';
 import { CloseIcon } from './Icons';
+import { CounterRing } from './CounterRing';
+import { CountingBackdrop, CountingGeometry } from './CountingBackdrop';
+import { DhikrReader } from './DhikrReader';
 
 const VIEWBOX = 320;
 const CENTER = VIEWBOX / 2;
@@ -33,6 +37,7 @@ type Props = {
   bottomInset: number;
   onTap: () => void;
   onExit: () => void;
+  onUndo?: () => void;
 };
 
 
@@ -43,7 +48,49 @@ function getPhraseStyle(phraseLength: number) {
   return { fontSize: 23, lineHeight: 36 };
 }
 
-export function FreeTapMode({
+export function FreeTapMode(props: Props) {
+  const { fontScale, height } = useWindowDimensions();
+  if (fontScale > 1.25 || props.dhikr.phrase.length > 80 || height - props.topInset - props.bottomInset < 540) {
+    return <AccessibleFreeTapMode {...props} />;
+  }
+  return <ImmersiveFreeTapMode {...props} />;
+}
+
+/** Large text can scroll to every control; the everyday immersive surface stays unchanged. */
+function AccessibleFreeTapMode({ count, target, completion, dhikr, effectsEnabled, topInset, bottomInset, onTap, onExit, onUndo }: Props) {
+  const { theme } = useTheme();
+  const { width, height, fontScale } = useWindowDimensions();
+  const fit = fontScale <= 1.25 && height - topInset - bottomInset >= 540;
+  const { activeMilestone } = getMilestoneProgress(count, target);
+  return <View accessibilityViewIsModal style={[StyleSheet.absoluteFill, {
+    zIndex: 100, backgroundColor: theme.background, paddingTop: topInset, paddingBottom: bottomInset,
+  }]}>
+    <CountingBackdrop />
+    <ScrollView scrollEnabled={!fit} contentContainerStyle={{ padding: 18, gap: 12, alignItems: 'center', flexGrow: 1, ...(fit ? { flex: 1 } : {}) }}>
+      <Pressable accessibilityRole="button" accessibilityLabel="إنهاء وضع النقر الحر" onPress={onExit}
+        style={{ minHeight: 44, minWidth: 44, padding: 10, alignSelf: 'flex-end', justifyContent: 'center' }}>
+        <CloseIcon size={22} color={theme.iconAccent} />
+      </Pressable>
+      <View style={{ width: '100%' }}>
+        <DhikrReader phrase={dhikr.phrase} title={dhikr.title} details={dhikr.virtue} testID="single-free-phrase"
+          counter={{ value: `${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)}`, canUndo: count > 0 && !!onUndo,
+            onTap, onUndo: () => onUndo?.() }} />
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="النقر الحر" onPress={onTap}
+        accessibilityValue={{ text: `${toArabicDigits(count)} تسبيحة، ${toArabicDigits(count)} من ${toArabicDigits(activeMilestone)} في الهدف الحالي` }}
+        style={{ minHeight: 180, minWidth: 240, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', ...(fit ? { flex: 1 } : { height: 300 }) }}>
+        <CountingGeometry size={Math.min(300, width - 36)} />
+        <View aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants" pointerEvents="none">
+          <CounterRing size={Math.min(260, width - 60, height * 0.32)} count={count} target={target} title={dhikr.title}
+            completion={completion} decorative effectsEnabled={effectsEnabled} onPress={onTap} />
+        </View>
+      </Pressable>
+      <Text style={{ color: theme.textMuted, fontSize: 15, textAlign: 'center' }}>بياناتك محفوظة على جهازك فقط</Text>
+    </ScrollView>
+  </View>;
+}
+
+function ImmersiveFreeTapMode({
   count,
   target,
   completion,
@@ -116,6 +163,7 @@ export function FreeTapMode({
 
   return (
     <View accessibilityViewIsModal style={styles.overlay}>
+      <CountingBackdrop />
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="النقر الحر"
@@ -152,6 +200,7 @@ export function FreeTapMode({
           style={styles.counterSection}
         >
           <View style={[styles.progressRing, { height: ringSize, width: ringSize }]}>
+            <CountingGeometry size={ringSize * 1.13} />
             <View pointerEvents="none" style={styles.ringArtwork}>
               <Svg height={ringSize} viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`} width={ringSize}>
                 <Defs>

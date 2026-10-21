@@ -26,6 +26,7 @@ An Arabic-first, offline tasbeeh app built with Expo and React Native.
 - Six selectable themes, saved locally; gallery and Settings counts derive from the theme registry.
 - Haptic and visual-effect settings, system reduced-motion handling, and Arabic accessibility labels.
 - Guarded storage initialization, corruption/read-failure protection, serialized writes, retry and visible save-failure feedback.
+- **التسبيحات الكاملة — Guided Dhikr Routines:** four locally sourced prayer/bedtime routines, automatic step changes, boundary undo, completion correction and saved resume. [Definitions, verified sources, statistics and QA](docs/GUIDED_ROUTINES.md).
 
 Behavior is covered by unit/browser tests and native Android 14 release smoke checks, including all six themes and saved restoration after force-stop. Physical haptics, TalkBack/VoiceOver, unacknowledged-write durability and production splash transitions still require further validation. No ads, subscriptions, accounts, analytics or backend are implemented. Preview/production Android configuration blocks Internet and media/storage permissions; development permits Metro access. This is not a claim that the final merged Android manifest has zero permissions.
 
@@ -105,9 +106,12 @@ npm run test:persistence
 npm run test:launch
 npm run test:themes
 npm run test:baseline
+npm run test:routines
 ```
 
 Browser commands require a separate QA runtime. See [reproduction instructions](docs/assets/screenshots/README.md); they use isolated test storage and mocked native services. Results and limitations are recorded in the [baseline](docs/PROJECT_BASELINE.md).
+
+Guided routines are a later local feature extension of the baseline. The initial implementation passed 73 unit/adapter tests and 28 routine browser scenario groups; its presentation has since received a focused recovery. [Current compact layout, before/after captures and validation status](docs/routines-ui/README.md) cover all six themes, narrow phones and enlarged text. The earlier Android APK/screenshots above do not contain routines; native routine QA remains pending.
 
 ## Android builds and current status
 
